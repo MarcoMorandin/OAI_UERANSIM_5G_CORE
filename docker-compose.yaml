@@ -2,7 +2,7 @@ version: '3.8'
 services:
     ueransim:
         container_name: ueransim
-        image: ueransim:latest
+        image: rohankharade/ueransim:latest
         privileged: true
         environment:
             # GNB Congig Parameters
