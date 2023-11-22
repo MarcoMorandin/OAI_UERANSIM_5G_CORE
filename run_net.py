@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     prj_folder = os.getcwd()
 
-    # net = Containernet(controller=Controller, link=TCLink)
+    net = Containernet(controller=Controller, link=TCLink)
     # ipam_pool = docker.types.IPAMPool(subnet='192.168.80.0/24')
     # ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
     # oai_net = client.networks.create(
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     info("*** Adding AMF container\n")
     amf = net.addDockerHost(
         "oai-amf",
-        dimage="oaisoftwarealliance/oai-amf:v1.5.1",
+        dimage="oai-amf_net",
         docker_args={
             "environment": {
                 "TZ":"Europe/Paris",
@@ -330,15 +330,22 @@ if __name__ == "__main__":
 
     info("*** Add controller\n")
     net.addController("c0")
+    
 
-    # info("*** Adding switch\n")
-    # s1 = net.addSwitch("s1")
-    # s2 = net.addSwitch("s2")
-    # s3 = net.addSwitch("s3")
 
-    # nfo("*** Adding links\n")
-    # net.addLink(s1,  s2, bw=1000, delay="10ms", intfName1="s1-s2",  intfName2="s2-s1")
-    # net.addLink(s2,  s3, bw=1000, delay="50ms", intfName1="s2-s3",  intfName2="s3-s2")
+    info("*** Adding switch\n")
+    s1 = net.addSwitch("s1")
+    s2 = net.addSwitch("s2")
+    s3 = net.addSwitch("s3")
+
+    info("*** Adding links\n")
+    net.addLink(s1,  s2, bw=1000, delay="10ms", intfName1="s1-s2",  intfName2="s2-s1")
+    net.addLink(s2,  s3, bw=1000, delay="50ms", intfName1="s2-s3",  intfName2="s3-s2")
+
+    net.addLink(amf, s3, bw=1000, delay="1ms", intfName1="amf-s3", intfName2="s3-amf", params1={'ip': '192.168.70.138r/24'})
+
+
+    
 
     # net.addLink(cp,      s3, bw=1000, delay="1ms", intfName1="cp-s1",  intfName2="s1-cp")
     # net.addLink(upf_cld, s3, bw=1000, delay="1ms", intfName1="upf-s3",  intfName2="s3-upf_cld")
