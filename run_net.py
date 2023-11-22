@@ -28,18 +28,18 @@ if __name__ == "__main__":
 
     prj_folder = os.getcwd()
 
-    net = Containernet(controller=Controller, link=TCLink)
-    """ ipam_pool = docker.types.IPAMPool(subnet='192.168.80.0/24')
-    ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
-    oai_net = client.networks.create(
-        "oai-public-net",
-        driver="bridge",
-        ipam=ipam_config,
-        options={
-            "com.docker.network.bridge.name": "oai_net",
-        }
-    )
- """
+    # net = Containernet(controller=Controller, link=TCLink)
+    # ipam_pool = docker.types.IPAMPool(subnet='192.168.80.0/24')
+    # ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
+    # oai_net = client.networks.create(
+    #     "oai-public-net",
+    #     driver="bridge",
+    #     ipam=ipam_config,
+    #     options={
+    #         "com.docker.network.bridge.name": "oai_net",
+    #     }
+    # )
+
     info("*** Adding mysql container\n")
     mysql = net.addDockerHost(
         "mysql",
@@ -90,7 +90,7 @@ if __name__ == "__main__":
             },
             "environment": {
                 "TZ": "Europe/Paris",
-                "UDR_NAME": "OAI_UDR",
+                "UDR_NAME": "OAI-UDR",
                 "UDR_INTERFACE_NAME_FOR_NUDR": "eth0",
                 "MYSQL_IPV4_ADDRESS": "192.168.70.131",
                 "MYSQL_USER": "test",
@@ -109,7 +109,6 @@ if __name__ == "__main__":
             
             #"ports": { "80/tcp": 3306, "8080/tcp": 8080 },
         },
-        ip="192.168.80.130"
     )
 
     info("*** Adding UDM container\n")
@@ -119,13 +118,13 @@ if __name__ == "__main__":
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
-                "UDM_NAME":"OAI_UDM",
+                "UDM_NAME":"OAI-UDM",
                 "SBI_IF_NAME":"eth0",
                 "USE_FQDN_DNS":"yes",
                 # UDM is not registered to NRF
                 "UDR_IP_ADDRESS":"192.168.70.133",
                 "UDR_VERSION_NB":"v1",
-                "UDR_FQDN":"oai_udr",
+                "UDR_FQDN":"oai-udr",
                 # changes for HTTP2
                 "USE_HTTP2":"yes",
                 "SBI_HTTP2_PORT":"8080",
@@ -145,13 +144,13 @@ if __name__ == "__main__":
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
-                "AUSF_NAME":"OAI_AUSF",
+                "AUSF_NAME":"OAI-AUSF",
                 "SBI_IF_NAME":"eth0",
                 "USE_FQDN_DNS":"yes",
                 # UDM is not registered to NRF
                 "UDM_IP_ADDRESS":"192.168.70.134",
                 "UDM_VERSION_NB":"v1",
-                "UDM_FQDN":"oai_udm",
+                "UDM_FQDN":"oai-udm",
                 # changes for HTTP2
                 "USE_HTTP2":"yes",
                 "UDM_PORT":"8080",
