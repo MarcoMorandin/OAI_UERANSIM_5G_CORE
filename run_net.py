@@ -43,7 +43,7 @@ if __name__ == "__main__":
     info("*** Adding mysql container\n")
     mysql = net.addDockerHost(
         "mysql",
-        dimage="mysql-net:8.0",
+        dimage="soldera21/mysql-net:8.0",
         docker_args={
             "volumes": {
                 prj_folder + "/database/oai_db.sql": {
@@ -340,8 +340,8 @@ if __name__ == "__main__":
     net.addLink(s1, s2, bw=1000, delay="10ms", intfName1="s1-s2", intfName2="s2-s1")
     net.addLink(s2, s3, bw=1000, delay="50ms", intfName1="s2-s3", intfName2="s3-s2")
     
-    net.addLink(mysql, s3, bw=1000, delay="1ms", intfName1="mysql-s1", intfName2="s1-mysql", params1={'ip': '192.168.70.131/24'})
-    net.addLink(udr, s3, bw=1000, delay="1ms", intfName1="udr-s1", intfName2="s1-udr", params1={'ip': '192.168.70.133/24'})
+    net.addLink(mysql, s3, bw=1000, delay="1ms", intfName1="mysql-s3", intfName2="s3-mysql", params1={'ip': '192.168.70.131/24'})
+    #net.addLink(udr, s3, bw=1000, delay="1ms", intfName1="udr-s1", intfName2="s1-udr", params1={'ip': '192.168.70.133/24'})
 
     info("\n*** Starting network\n")
     net.start()
