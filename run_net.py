@@ -13,7 +13,7 @@ from comnetsemu.net import Containernet, VNFManager
 from mininet.link import TCLink, Intf
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
-import docker
+# import docker
 
 import json, time
 
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     setLogLevel("info")
     env = dict()
 
-    client = docker.from_env()
+    # client = docker.from_env()
 
     prj_folder = os.getcwd()
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     info("*** Adding mysql container\n")
     mysql = net.addDockerHost(
         "mysql",
-        dimage="mysql:8.0",
+        dimage="mysql-net:8.0",
         docker_args={
             "volumes": {
                 prj_folder + "/database/oai_db.sql": {
@@ -71,7 +71,7 @@ if __name__ == "__main__":
             # "ports": { "3306/tcp": 3306 },
         },
     )
-#    oai_net.connect("mysql", ipv4_address="192.168.80.131")
+    # oai_net.connect("mysql", ipv4_address="192.168.80.131")
 
     info("*** Adding UDR container\n")
     udr = net.addDockerHost(
@@ -107,7 +107,7 @@ if __name__ == "__main__":
                 "retries": 30,
             },
             
-            #"ports": { "80/tcp": 3306, "8080/tcp": 8080 },
+            # "ports": { "80/tcp": 3306, "8080/tcp": 8080 },
         },
     )
 
@@ -118,17 +118,17 @@ if __name__ == "__main__":
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
-                "UDM_NAME":"OAI-UDM",
-                "SBI_IF_NAME":"eth0",
-                "USE_FQDN_DNS":"yes",
+                "UDM_NAME": "OAI-UDM",
+                "SBI_IF_NAME": "eth0",
+                "USE_FQDN_DNS": "yes",
                 # UDM is not registered to NRF
-                "UDR_IP_ADDRESS":"192.168.70.133",
-                "UDR_VERSION_NB":"v1",
-                "UDR_FQDN":"oai-udr",
+                "UDR_IP_ADDRESS": "192.168.70.133",
+                "UDR_VERSION_NB": "v1",
+                "UDR_FQDN": "oai-udr",
                 # changes for HTTP2
-                "USE_HTTP2":"yes",
-                "SBI_HTTP2_PORT":"8080",
-                "UDR_PORT":"8080",
+                "USE_HTTP2": "yes",
+                "SBI_HTTP2_PORT": "8080",
+                "UDR_PORT": "8080",
             },
             # "ports": {
             #     "80/tcp": 80,
@@ -293,7 +293,7 @@ if __name__ == "__main__":
         },
     )
 
-    info("*** Adding SPGWU container\n")
+    info("*** Adding SPGWU UPF container\n")
     spgwu = net.addDockerHost(
         "oai-spgwu",
         dimage="oaisoftwarealliance/oai-spgwu-tiny:v1.5.1",
@@ -332,7 +332,6 @@ if __name__ == "__main__":
     net.addController("c0")
     
 
-
     info("*** Adding switch\n")
     s1 = net.addSwitch("s1")
     s2 = net.addSwitch("s2")
@@ -342,10 +341,7 @@ if __name__ == "__main__":
     net.addLink(s1,  s2, bw=1000, delay="10ms", intfName1="s1-s2",  intfName2="s2-s1")
     net.addLink(s2,  s3, bw=1000, delay="50ms", intfName1="s2-s3",  intfName2="s3-s2")
 
-    net.addLink(amf, s3, bw=1000, delay="1ms", intfName1="amf-s3", intfName2="s3-amf", params1={'ip': '192.168.70.138r/24'})
-
-
-    
+    net.addLink(amf, s3, bw=1000, delay="1ms", intfName1="amf-s3", intfName2="s3-amf", params1={'ip': '192.168.70.138r/24'})    
 
     # net.addLink(cp,      s3, bw=1000, delay="1ms", intfName1="cp-s1",  intfName2="s1-cp")
     # net.addLink(upf_cld, s3, bw=1000, delay="1ms", intfName1="upf-s3",  intfName2="s3-upf_cld")
@@ -353,8 +349,9 @@ if __name__ == "__main__":
 
     # net.addLink(ue,  s1, bw=1000, delay="1ms", intfName1="ue-s1",  intfName2="s1-ue")
     # net.addLink(gnb, s1, bw=1000, delay="1ms", intfName1="gnb-s1", intfName2="s1-gnb")
-
     
+    net.addLink(mysql, s3, bw=1000, delay="1ms", intfName1="mysql-s1", intfName2="s1-mysql", params1={'ip': '192.168.70.131/24'})
+    net.addLink(udr, s3, bw=1000, delay="1ms", intfName1="udr-s1", intfName2="s1-udr", params1={'ip': '192.168.70.133/24'})
 
     info("\n*** Starting network\n")
     net.start()
