@@ -5,6 +5,7 @@
 # docker kill $(docker ps -a)
 # docker exec oai-ext-dn ping -c 4 12.1.1.2
 # docker network prune
+# ip link delete s1-s2
 
 import os
 
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     info("*** Adding UDR container\n")
     udr = net.addDockerHost(
         "oai-udr",
-        dimage="oaisoftwarealliance/oai-udr:v1.5.1",
+        dimage="soldera21/oai-udr:v1.5.1",
         docker_args={
             "volumes": {
                 prj_folder + "/database/oai_db.sql": {
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     info("*** Adding UDM container\n")
     udm = net.addDockerHost(
         "oai-udm",
-        dimage="oaisoftwarealliance/oai-udm:v1.5.1",
+        dimage="soldera21/oai-udm:v1.5.1",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -140,7 +141,7 @@ if __name__ == "__main__":
     info("*** Adding AUSF container\n")
     ausf = net.addDockerHost(
         "oai-ausf",
-        dimage="oaisoftwarealliance/oai-ausf:v1.5.1",
+        dimage="soldera21/oai-ausf:v1.5.1",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -165,7 +166,7 @@ if __name__ == "__main__":
     info("*** Adding NRF container\n")
     nrf = net.addDockerHost(
         "oai-nrf",
-        dimage="oaisoftwarealliance/oai-nrf:v1.5.1",
+        dimage="soldera21/oai-nrf:v1.5.1",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -182,7 +183,7 @@ if __name__ == "__main__":
     info("*** Adding AMF container\n")
     amf = net.addDockerHost(
         "oai-amf",
-        dimage="oai-amf_net",
+        dimage="soldera21/oai-amf:v1.5.1",
         docker_args={
             "environment": {
                 "TZ":"Europe/Paris",
@@ -248,7 +249,7 @@ if __name__ == "__main__":
     info("*** Adding SMF container\n")
     smf = net.addDockerHost(
         "oai-smf",
-        dimage="oaisoftwarealliance/oai-smf:v1.5.1",
+        dimage="soldera21/oai-smf:v1.5.1",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -296,7 +297,7 @@ if __name__ == "__main__":
     info("*** Adding SPGWU UPF container\n")
     spgwu = net.addDockerHost(
         "oai-spgwu",
-        dimage="oaisoftwarealliance/oai-spgwu-tiny:v1.5.1",
+        dimage="soldera21/oai-spgwu-tiny:v1.5.1",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -330,7 +331,6 @@ if __name__ == "__main__":
 
     info("*** Add controller\n")
     net.addController("c0")
-    
 
     info("*** Adding switch\n")
     s1 = net.addSwitch("s1")
@@ -341,17 +341,14 @@ if __name__ == "__main__":
     net.addLink(s1,  s2, bw=1000, delay="10ms", intfName1="s1-s2",  intfName2="s2-s1")
     net.addLink(s2,  s3, bw=1000, delay="50ms", intfName1="s2-s3",  intfName2="s3-s2")
 
-    net.addLink(amf, s3, bw=1000, delay="1ms", intfName1="amf-s3", intfName2="s3-amf", params1={'ip': '192.168.70.138r/24'})    
-
-    # net.addLink(cp,      s3, bw=1000, delay="1ms", intfName1="cp-s1",  intfName2="s1-cp")
-    # net.addLink(upf_cld, s3, bw=1000, delay="1ms", intfName1="upf-s3",  intfName2="s3-upf_cld")
-    # net.addLink(upf_mec, s2, bw=1000, delay="1ms", intfName1="upf_mec-s2", intfName2="s2-upf_mec")
-
-    # net.addLink(ue,  s1, bw=1000, delay="1ms", intfName1="ue-s1",  intfName2="s1-ue")
-    # net.addLink(gnb, s1, bw=1000, delay="1ms", intfName1="gnb-s1", intfName2="s1-gnb")
-    
     net.addLink(mysql, s3, bw=1000, delay="1ms", intfName1="mysql-s3", intfName2="s3-mysql", params1={'ip': '192.168.70.131/24'})
-    #net.addLink(udr, s3, bw=1000, delay="1ms", intfName1="udr-s1", intfName2="s1-udr", params1={'ip': '192.168.70.133/24'})
+    net.addLink(udr, s3, bw=1000, delay="1ms", intfName1="udr-s3", intfName2="s3-udr", params1={'ip': '192.168.70.133/24'})
+    net.addLink(udm, s3, bw=1000, delay="1ms", intfName1="udm-s3", intfName2="s3-udm", params1={'ip': '192.168.70.134/24'})
+    net.addLink(ausf, s3, bw=1000, delay="1ms", intfName1="ausf-s3", intfName2="s3-ausf", params1={'ip': '192.168.70.135/24'})
+    net.addLink(nrf, s3, bw=1000, delay="1ms", intfName1="nrf-s3", intfName2="s3-nrf", params1={'ip': '192.168.70.136/24'})
+    net.addLink(amf, s3, bw=1000, delay="1ms", intfName1="amf-s3", intfName2="s3-amf", params1={'ip': '192.168.70.138/24'})
+    net.addLink(smf, s3, bw=1000, delay="1ms", intfName1="smf-s3", intfName2="s3-smf", params1={'ip': '192.168.70.139/24'})
+    net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
 
     info("\n*** Starting network\n")
     net.start()
