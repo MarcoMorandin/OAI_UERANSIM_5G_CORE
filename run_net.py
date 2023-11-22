@@ -12,7 +12,7 @@ from comnetsemu.net import Containernet, VNFManager
 from mininet.link import TCLink, Intf
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
-import docker
+#import docker
 
 import json, time
 
@@ -23,12 +23,12 @@ if __name__ == "__main__":
     setLogLevel("info")
     env = dict()
 
-    client = docker.from_env()
+    #client = docker.from_env()
 
     prj_folder = os.getcwd()
 
     net = Containernet(controller=Controller, link=TCLink)
-    ipam_pool = docker.types.IPAMPool(subnet='192.168.80.0/24')
+    '''ipam_pool = docker.types.IPAMPool(subnet='192.168.80.0/24')
     ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
     oai_net = client.networks.create(
         "oai-public-net",
@@ -37,12 +37,12 @@ if __name__ == "__main__":
         options={
             "com.docker.network.bridge.name": "oai_net",
         }
-    )
+    )'''
 
     info("*** Adding mysql container\n")
     mysql = net.addDockerHost(
         "mysql",
-        dimage="mysql:8.0",
+        dimage="mysql-net:8.0",
         docker_args={
             "volumes": {
                 prj_folder + "/database/oai_db.sql": {
@@ -70,7 +70,7 @@ if __name__ == "__main__":
             "ports": { "3306/tcp": 3306 },
         },
     )
-    oai_net.connect("mysql", ipv4_address="192.168.80.131")
+    #oai_net.connect("mysql", ipv4_address="192.168.80.131")
 
     '''info("*** Adding UDR container\n")
     udr = net.addDockerHost(
@@ -117,16 +117,11 @@ if __name__ == "__main__":
     s2 = net.addSwitch("s2")
     s3 = net.addSwitch("s3")
 
-    '''info("*** Adding links\n")
-    net.addLink(s1,  s2, bw=1000, delay="10ms", intfName1="s1-s2",  intfName2="s2-s1")
-    net.addLink(s2,  s3, bw=1000, delay="50ms", intfName1="s2-s3",  intfName2="s3-s2")
+    info("*** Adding links\n")
+    net.addLink(s1, s2, bw=1000, delay="10ms", intfName1="s1-s2", intfName2="s2-s1")
+    net.addLink(s2, s3, bw=1000, delay="50ms", intfName1="s2-s3", intfName2="s3-s2")
     
-    net.addLink(cp,      s3, bw=1000, delay="1ms", intfName1="cp-s1",  intfName2="s1-cp")
-    net.addLink(upf_cld, s3, bw=1000, delay="1ms", intfName1="upf-s3",  intfName2="s3-upf_cld")
-    net.addLink(upf_mec, s2, bw=1000, delay="1ms", intfName1="upf_mec-s2", intfName2="s2-upf_mec")
-
-    net.addLink(ue,  s1, bw=1000, delay="1ms", intfName1="ue-s1",  intfName2="s1-ue")
-    net.addLink(gnb, s1, bw=1000, delay="1ms", intfName1="gnb-s1", intfName2="s1-gnb")'''
+    net.addLink(mysql, s3, bw=1000, delay="1ms", intfName2="s1-mysql", params1={'ip': '192.168.70.131/24'})
 
     info("\n*** Starting network\n")
     net.start()
@@ -134,7 +129,7 @@ if __name__ == "__main__":
     if not AUTOTEST_MODE:
         CLI(net)
 
-    oai_net.disconnect("mysql")
+    #oai_net.disconnect("mysql")
 
     net.stop()
-    oai_net.remove()
+    #oai_net.remove()
