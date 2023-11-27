@@ -2,7 +2,7 @@ version: '3.8'
 services:
     mysql:
         container_name: "mysql"
-        image: mysql-net:8.0
+        image: networking2/mysql-net:8.0
         volumes:
             - ./database/oai_db-basic.sql:/docker-entrypoint-initdb.d/oai_db.sql
             - ./healthscripts/mysql-healthcheck2.sh:/tmp/mysql-healthcheck.sh

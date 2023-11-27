@@ -325,7 +325,7 @@ if __name__ == "__main__":
     )
 
     info("*** Adding EXT-DN container\n")
-    ext-dn = net.addDockerHost(
+    ext_dn = net.addDockerHost(
         "oai-ext-dn",
         dimage="oaisoftwarealliance/trf-gen-cn5g:latest",
         docker_args={
@@ -362,7 +362,7 @@ if __name__ == "__main__":
     net.addLink(amf, s3, bw=1000, delay="1ms", intfName1="amf-s3", intfName2="s3-amf", params1={'ip': '192.168.70.138/24'})
     net.addLink(smf, s3, bw=1000, delay="1ms", intfName1="smf-s3", intfName2="s3-smf", params1={'ip': '192.168.70.139/24'})
     net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
-    net.addLink(ext-dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.70.145/24'})
+    net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.70.145/24'})
 
     info("\n*** Starting network\n")
     net.start()
