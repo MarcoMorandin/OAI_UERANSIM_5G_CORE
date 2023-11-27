@@ -1,4 +1,0 @@
-#syntax=docker/dockerfile:1
-FROM oaisoftwarealliance/oai-smf:v1.5.1
-RUN apt-get update
-RUN apt-get install iproute2 -y
