@@ -1,22 +1,25 @@
 import os, sys
 import docker
 
-client = docker.from_env()
-images = client.images.list()
 
 presence_array = []
 components = ["udr", "udm", "ausf", "nrf", "amf", "smf", "spgwu-tiny", "upf-vpp"]
 
+client = docker.from_env()
+images = client.images.list()
 
 for image in images:
     for component in components:
-        if(str(image) == "<Image: 'soldera21/oai-" + component + ":v1.5.1'>"):
+        if(str(image) == "<Image: 'networking2/oai-" + component + ":v1.5.1'>"):
             presence_array.append(True)
 
 if len(presence_array) != 8:
-    print("********* In order to download all docker images you must login into docker *************")
+    print("********* Some required images are missed *********")
+    print("********* Now this script download and rebuild all the required images *********")
+    print("********* In order to download all docker images you must login into docker *********")
     os.system("/bin/bash -c \"docker login\"")
     for component in components:
+        print(f"********* Downloading and rebuilding of oai-{component} image ************")
         f = open("dockerfile/Dockerfile." + component, "w")
         f.write(    "#syntax=docker/dockerfile:1\n" +
                     f"FROM oaisoftwarealliance/oai-{component}:v1.5.1\n" +
@@ -24,8 +27,8 @@ if len(presence_array) != 8:
                     "RUN apt-get install iproute2 -y\n")
         f.close()
 
-        command = "docker build -f dockerfile/Dockerfile." + component + " -t soldera21/oai-" + component + ":v1.5.1 ."
-        
-        os.system("/bin/bash -c \"" + command + "\"") 
+        image, build_logs = client.images.build(path="dockerfile/", dockerfile="Dockerfile." + component, tag="networking2/oai-" + component + ":v1.5.1", rm=True)
+        print(f"********* Downloading and rebuilding of oai-{component} finished *********")
+
 else:
-    print("All Docker Images are already present.")
+    print("********* All Docker Images are already present. *********")
