@@ -5,6 +5,7 @@
 # docker kill $(docker ps -a)
 # docker exec oai-ext-dn ping -c 4 12.1.1.2
 # docker network prune
+# docker rmi $(docker images)
 
 import os
 
