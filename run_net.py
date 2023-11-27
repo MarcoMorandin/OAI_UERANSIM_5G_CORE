@@ -15,12 +15,11 @@ from comnetsemu.net import Containernet, VNFManager
 from mininet.link import TCLink, Intf
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
-# import docker
+from components.build_dockerfile import *
 
 import json, time
 
 if __name__ == "__main__":
-
     AUTOTEST_MODE = os.environ.get("COMNETSEMU_AUTOTEST_MODE", 0)
 
     setLogLevel("info")
@@ -41,7 +40,9 @@ if __name__ == "__main__":
     #         "com.docker.network.bridge.name": "oai_net",
     #     }
     # )
-
+    
+    build_images(basedir="./components/")
+    
     info("*** Adding mysql container\n")
     mysql = net.addDockerHost(
         "mysql",
