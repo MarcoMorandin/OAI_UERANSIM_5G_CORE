@@ -1,1 +1,2 @@
-components/dockerfile
+components/dockerfile/*s
+components/push_dockerhub.py

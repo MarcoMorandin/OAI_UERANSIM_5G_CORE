@@ -52,7 +52,9 @@ RUN set -eux; \
 	gpg --batch --export --armor "$key" > /etc/pki/rpm-gpg/RPM-GPG-KEY-mysql; \
 	rm -rf "$GNUPGHOME"
 
-RUN microdnf install net-tools
+RUN microdnf install -y \
+	net-tools \
+	tc
 
 ENV MYSQL_MAJOR 8.0
 ENV MYSQL_VERSION 8.0.35-1.el8
