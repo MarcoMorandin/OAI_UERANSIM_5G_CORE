@@ -18,8 +18,8 @@ def build_images(basedir = "./"):
 
     if(len(presence_array) != len(components) or mysql_presence is False):
         print("********* Some required images are missed *********")
-        print("********* Now this script download and rebuild all the required images *********")
-        print("********* In order to download all docker images you must login into docker *********")
+        print("********* Now downloading and rebuilding all required images *********")
+        print("********* In order to download all docker images you must login to DockerHub *********")
         os.system("/bin/bash -c \"docker login\"")
         for component in components:
             print(f"********* Downloading and rebuilding of oai-{component} image ************")
@@ -32,11 +32,11 @@ def build_images(basedir = "./"):
             f.close()
 
             image = client.images.build(path=basedir + "dockerfile/", dockerfile="Dockerfile." + component, tag="networking2/oai-" + component + ":v1.5.1", rm=True)
-            print(f"********* Downloading and rebuilding of oai-{component} finished *********")
+            print(f"********* FINISHED Downloading and rebuilding of oai-{component} *********")
         if(mysql_presence is False):
             print(f"********* Downloading and rebuilding of mysql image ************")
             image = client.images.build(path=basedir + "mysql-net/", dockerfile="Dockerfile.debian", tag="networking2/mysql-net:8.0", rm=True)
-            print(f"********* Downloading and rebuilding of mysql finished *********")
+            print(f"********* FINISHED Downloading and rebuilding of mysql *********")
         
     else:
-        print("********* All Docker Images are already present. *********")
+        print("********* All Docker Images are already present *********")
