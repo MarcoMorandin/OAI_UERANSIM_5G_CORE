@@ -23,9 +23,13 @@ if __name__ == "__main__":
     AUTOTEST_MODE = os.environ.get("COMNETSEMU_AUTOTEST_MODE", 0)
 
     setLogLevel("info")
-    env = dict()
 
-    # client = docker.from_env()
+    client = docker.from_env()
+    containers = client.containers
+
+    for container in containers.list():
+        if("networking2" in str(container.image)):
+            container.kill()
 
     prj_folder = os.getcwd()
 
@@ -291,7 +295,7 @@ if __name__ == "__main__":
         "oai-spgwu",
         dimage="networking2/oai-spgwu-tiny:v1.5.1",
         docker_args={
-            "privileged": True,
+            # "privileged": "true",
             "environment": {
                 "TZ": "Europe/Paris",
                 "SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP": "eth0",
@@ -329,12 +333,77 @@ if __name__ == "__main__":
         "oai-ext-dn",
         dimage="oaisoftwarealliance/trf-gen-cn5g:latest",
         docker_args={
-            "priviledged": True,
-            "init": True,
+            # "privileged": "true",
+            # "init": "true",
             "entrypoint": "/bin/bash -c \"iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE; ip route add 12.2.1.2/32 via 192.168.70.142 dev eth0;\"",
             "command": ["/bin/bash", "-c", "trap : SIGTERM SIGINT; sleep infinity & wait"],
             "healthcheck": {
                 "test": "/bin/bash -c \"iptables -L -t nat | grep MASQUERADE\"",
+                "interval": 10000000000,
+                "timeout": 5000000000,
+                "retries": 10,
+            },
+        },
+    )
+
+    info("*** Adding gNB\n")
+    gnb = net.addDockerHost(
+        "gnb", 
+        dimage="rohankharade/ueransim:latest",
+        docker_args={
+            "environment": env,
+            "cap_add": ["NET_ADMIN"],
+            "MCC":"208",
+            "MNC":"95",
+            "NCI":"0x000000010",
+            "TAC":"0xa000",
+            "LINK_IP":"192.168.70.152",
+            "NGAP_IP":"192.168.70.152",
+            "GTP_IP":"192.168.70.152",
+            "NGAP_PEER_IP":"192.168.70.138",
+            "SST":"128",
+            "SD":"128",
+            "SST_0":"128",
+            "SD_0":"128",
+            "SST_1":"1",
+            "SD_1":"0",
+            "SST_2":"131",
+            "SD_2":"131",
+            "IGNORE_STREAM_IDS":"true",
+            "healthcheck": {
+                "test": "/bin/bash -c \"ifconfig uesimtun0\"",
+                "interval": 10000000000,
+                "timeout": 5000000000,
+                "retries": 10,
+            },
+        },
+    )
+
+    info("*** Adding UE\n")
+    ue = net.addDockerHost(
+        "ue", 
+        dimage="rohankharade/ueransim:latest",
+        docker_args={
+            "NUMBER_OF_UE":"10",
+            "IMSI":"208960000000036",
+            "KEY":"0C0A34601D4F07677303652C0462535B",
+            "OP":"63bfa50ee6523365ff14c1f45f88737d",
+            "OP_TYPE":"OPC",
+            "AMF_VALUE":"8000",
+            "IMEI":"356938035643803",
+            "IMEI_SV":"0035609204079514",
+            "GNB_IP_ADDRESS":"192.168.70.152",
+            "PDU_TYPE":"IPv4",
+            "APN":"default",
+            "SST_R":"128", #Requested N-SSAI
+            "SD_R":"128",
+            "SST_C":"128", 
+            "SD_C":"128",
+            "SST_D":"128",
+            "SD_D":"128",
+            "cap_add": ["NET_ADMIN"],
+            "healthcheck": {
+                "test": "/bin/bash -c \"ifconfig uesimtun0\"",
                 "interval": 10000000000,
                 "timeout": 5000000000,
                 "retries": 10,
