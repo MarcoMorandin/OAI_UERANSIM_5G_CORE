@@ -9,6 +9,7 @@
 # ip link delete s1-s2
 
 import os
+import docker
 
 from comnetsemu.cli import CLI
 from comnetsemu.net import Containernet, VNFManager
@@ -21,16 +22,17 @@ import json, time
 
 if __name__ == "__main__":
     AUTOTEST_MODE = os.environ.get("COMNETSEMU_AUTOTEST_MODE", 0)
-
+    
     setLogLevel("info")
     env = dict()
 
-    # client = docker.from_env()
+    client = docker.from_env()
 
     prj_folder = os.getcwd()
 
     net = Containernet(controller=Controller, link=TCLink)
-    # ipam_pool = docker.types.IPAMPool(subnet='192.168.80.0/24')
+
+    # ipam_pool = docker.types.IPAMPool(subnet='192.168.70.0/24')
     # ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
     # oai_net = client.networks.create(
     #     "oai-public-net",
@@ -286,12 +288,12 @@ if __name__ == "__main__":
         },
     )
 
-    info("*** Adding SPGWU UPF container\n")
+    info("*** Adding SPGWU-UPF container\n")
     spgwu = net.addDockerHost(
         "oai-spgwu",
         dimage="networking2/oai-spgwu-tiny:v1.5.1",
         docker_args={
-            "privileged": True,
+            # "privileged": True,
             "environment": {
                 "TZ": "Europe/Paris",
                 "SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP": "eth0",
@@ -329,9 +331,8 @@ if __name__ == "__main__":
         "oai-ext-dn",
         dimage="oaisoftwarealliance/trf-gen-cn5g:latest",
         docker_args={
-            "priviledged": True,
-            "init": True,
-            "entrypoint": "/bin/bash -c \"iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE; ip route add 12.2.1.2/32 via 192.168.70.142 dev eth0;\"",
+            # "privileged": True,
+            # "init": True,
             "command": ["/bin/bash", "-c", "trap : SIGTERM SIGINT; sleep infinity & wait"],
             "healthcheck": {
                 "test": "/bin/bash -c \"iptables -L -t nat | grep MASQUERADE\"",
@@ -363,6 +364,8 @@ if __name__ == "__main__":
     net.addLink(smf, s3, bw=1000, delay="1ms", intfName1="smf-s3", intfName2="s3-smf", params1={'ip': '192.168.70.139/24'})
     net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
     net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.70.145/24'})
+    
+    client.containers.get("oai-ext-dn").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.2/32 via 192.168.70.142 dev ext_dn-s3;\"")
 
     info("\n*** Starting network\n")
     net.start()
