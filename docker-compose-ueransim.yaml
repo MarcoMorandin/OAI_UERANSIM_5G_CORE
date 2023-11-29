@@ -24,8 +24,8 @@ services:
             - SD_2=131
             - IGNORE_STREAM_IDS=true
             # UE Config Parameters
-            - NUMBER_OF_UE=10
-            - IMSI=208960000000036
+            - NUMBER_OF_UE=2
+            - IMSI=208950000000035
             - KEY=0C0A34601D4F07677303652C0462535B
             - OP=63bfa50ee6523365ff14c1f45f88737d
             - OP_TYPE=OPC
