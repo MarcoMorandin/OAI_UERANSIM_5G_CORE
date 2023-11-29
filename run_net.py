@@ -269,7 +269,7 @@ if __name__ == "__main__":
                 # One single slice is defined.
                 "DNN_NI0": "default",
                 "TYPE0": "IPv4",
-                "DNN_RANGE0": "12.2.1.2 - 12.2.1.128",
+                "DNN_RANGE0": "12.2.1.2 - 12.2.1.254",
                 "NSSAI_SST0": "128",
                 "NSSAI_SD0": "128",
                 "SESSION_AMBR_UL0": "50Mbps",
@@ -333,6 +333,7 @@ if __name__ == "__main__":
         docker_args={
             # "privileged": True,
             # "init": True,
+            # "entrypoint": "/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"",
             "command": ["/bin/bash", "-c", "trap : SIGTERM SIGINT; sleep infinity & wait"],
             "healthcheck": {
                 "test": "/bin/bash -c \"iptables -L -t nat | grep MASQUERADE\"",
@@ -365,7 +366,8 @@ if __name__ == "__main__":
     net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
     net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.70.145/24'})
     
-    client.containers.get("oai-ext-dn").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.2/32 via 192.168.70.142 dev ext_dn-s3;\"")
+    client.containers.get("oai-ext-dn").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"")
+    # ??? ^^^ 12.2.1.0/24
 
     info("\n*** Starting network\n")
     net.start()
