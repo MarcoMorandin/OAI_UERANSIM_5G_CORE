@@ -179,7 +179,6 @@ services:
             - PLMN_SUPPORT_MCC=208
             - PLMN_SUPPORT_MNC=95
             - PLMN_SUPPORT_TAC=0xa000
-<<<<<<< HEAD
             # Slice 0 (1, 0xFFFFFF)
             - SST_0=1
             # At least one slice SHALL be defined.
@@ -193,36 +192,11 @@ services:
             - AMF_INTERFACE_NAME_FOR_NGAP=eth0
             - AMF_INTERFACE_NAME_FOR_N11=eth0
             # One single SMF instance
-=======
-            # Slice 0 (128, 128)
-            - SST_0=128
-            - SD_0=128
-            # # Slice 1 (1, 0xFFFFFF)
-            # - SST_1=1
-            # # Slice 2 (130, 130)
-            # - SST_2=130
-            # - SD_2=130
-            # - AMF_INTERFACE_NAME_FOR_NGAP=eth0
-            # - AMF_INTERFACE_NAME_FOR_N11=eth0
-            # First SMF instance
->>>>>>> 80d0cb9b051369f26c73cfaa7699beb099d03217
             - SMF_INSTANCE_ID_0=1
             - SMF_FQDN_0=oai-smf
             - SMF_IPV4_ADDR_0=192.168.70.139
             - SELECTED_0=true
-<<<<<<< HEAD
             - NF_REGISTRATION=yes
-=======
-            # # Second SMF instance
-            # - SMF_INSTANCE_ID_1=2
-            # - SMF_FQDN_1=oai_smf_slice2
-            # - SMF_HTTP_VERSION_1=v1
-            # - SELECTED_1=false
-            # Feature list
-            - EXTERNAL_NRF=no
-            - NRF_SELECTION=yes
-            - SMF_SELECTION=yes
->>>>>>> 80d0cb9b051369f26c73cfaa7699beb099d03217
             - USE_FQDN_DNS=yes
             - SMF_SELECTION=yes
             - EXTERNAL_AUSF=yes
