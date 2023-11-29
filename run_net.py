@@ -10,6 +10,7 @@
 
 import os
 import docker
+import time
 
 from comnetsemu.cli import CLI
 from comnetsemu.net import Containernet, VNFManager
@@ -17,6 +18,7 @@ from mininet.link import TCLink, Intf
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
 from components.build_dockerfile import *
+from components.remove_containers import *
 
 import json, time
 
@@ -24,26 +26,18 @@ if __name__ == "__main__":
     AUTOTEST_MODE = os.environ.get("COMNETSEMU_AUTOTEST_MODE", 0)
     
     setLogLevel("info")
-    env = dict()
 
     client = docker.from_env()
+    containers = client.containers
 
     prj_folder = os.getcwd()
 
     net = Containernet(controller=Controller, link=TCLink)
-
-    # ipam_pool = docker.types.IPAMPool(subnet='192.168.70.0/24')
-    # ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
-    # oai_net = client.networks.create(
-    #     "oai-public-net",
-    #     driver="bridge",
-    #     ipam=ipam_config,
-    #     options={
-    #         "com.docker.network.bridge.name": "oai_net",
-    #     }
-    # )
     
+    remove_containers()
+
     build_images(basedir="./components/")
+
     
     info("*** Adding mysql container\n")
     mysql = net.addDockerHost(
@@ -78,7 +72,6 @@ if __name__ == "__main__":
             # },
         },
     )
-    # oai_net.connect("mysql", ipv4_address="192.168.80.131")
 
     info("*** Adding UDR container\n")
     udr = net.addDockerHost(
@@ -232,11 +225,11 @@ if __name__ == "__main__":
                 "AUSF_PORT": "8080",
                 "UDM_PORT": "8080",
             },
-            # "ports": {
-            #     "80/tcp": 80,
-            #     "8080/tcp": 8080,
-            #     "38412/sctp": 38412,
-            # },
+            "ports": {
+                "80/tcp": 80,
+                "8080/tcp": 8080,
+                "38412/sctp": 38412,
+            },
         },
     )
 
@@ -344,6 +337,73 @@ if __name__ == "__main__":
         },
     )
 
+    time.sleep(20)
+
+    info("*** Adding gNB\n")
+    gnb = net.addDockerHost(
+        "gnb", 
+        dimage="networking2/ueransim:3.2.6",
+        dcmd="bash /mnt/ueransim/gnb_init.sh",
+        docker_args={
+            "volumes": {
+                prj_folder + "/ueransim/config": {
+                    "bind": "/mnt/ueransim",
+                    "mode": "rw",
+                },
+                prj_folder + "/log": {
+                    "bind": "/mnt/log",
+                    "mode": "rw",
+                },
+                "/etc/timezone": {
+                    "bind": "/etc/timezone",
+                    "mode": "ro",
+                },
+                "/etc/localtime": {
+                    "bind": "/etc/localtime",
+                    "mode": "ro",
+                },
+                "/dev": {
+                    "bind": "/dev",
+                    "mode": "rw"
+                },
+            },
+            "cap_add": ["NET_ADMIN"],
+            "devices": "/dev/net/tun:/dev/net/tun:rwm"
+        },
+    )
+
+    info("*** Adding UE\n")
+    ue = net.addDockerHost(
+        "ue", 
+        dimage="networking2/ueransim:3.2.6",
+
+        dcmd="bash /mnt/ueransim/ue_init.sh",
+        docker_args={
+            "volumes": {
+                prj_folder + "/ueransim/config": {
+                    "bind": "/mnt/ueransim",
+                    "mode": "rw",
+                },
+                prj_folder + "/log": {
+                    "bind": "/mnt/log",
+                    "mode": "rw",
+                },
+                "/etc/timezone": {
+                    "bind": "/etc/timezone",
+                    "mode": "ro",
+                },
+                "/etc/localtime": {
+                    "bind": "/etc/localtime",
+                    "mode": "ro",
+                },
+                "/dev": {"bind": "/dev", "mode": "rw"},
+            },
+            "cap_add": ["NET_ADMIN"],
+            "devices": "/dev/net/tun:/dev/net/tun:rwm"
+        },
+    )
+
+
     info("*** Add controller\n")
     net.addController("c0")
 
@@ -353,8 +413,8 @@ if __name__ == "__main__":
     s3 = net.addSwitch("s3")
 
     info("*** Adding links\n")
-    net.addLink(s1,  s2, bw=1000, delay="10ms", intfName1="s1-s2",  intfName2="s2-s1")
-    net.addLink(s2,  s3, bw=1000, delay="50ms", intfName1="s2-s3",  intfName2="s3-s2")
+    s1s2_link = net.addLink(s1,  s2, bw=1000, delay="10ms", intfName1="s1-s2",  intfName2="s2-s1")
+    s2s3_link = net.addLink(s2,  s3, bw=1000, delay="50ms", intfName1="s2-s3",  intfName2="s3-s2")
 
     net.addLink(mysql, s3, bw=1000, delay="1ms", intfName1="mysql-s3", intfName2="s3-mysql", params1={'ip': '192.168.70.131/24'})
     net.addLink(udr, s3, bw=1000, delay="1ms", intfName1="udr-s3", intfName2="s3-udr", params1={'ip': '192.168.70.133/24'})
@@ -368,6 +428,9 @@ if __name__ == "__main__":
     
     client.containers.get("oai-ext-dn").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"")
     # ??? ^^^ 12.2.1.0/24
+    
+    net.addLink(ue,  s1, bw=1000, delay="1ms", intfName1="ue-s1",  intfName2="s1-ue", params1={'ip': '192.168.70.153/24'})
+    net.addLink(gnb, s1, bw=1000, delay="1ms", intfName1="gnb-s1", intfName2="s1-gnb", params1={'ip': '192.168.70.152/24'})
 
     info("\n*** Starting network\n")
     net.start()
@@ -375,7 +438,8 @@ if __name__ == "__main__":
     if not AUTOTEST_MODE:
         CLI(net)
 
-    # oai_net.disconnect("mysql")
+    net.delLink(s1s2_link)
+    net.delLink(s2s3_link)
 
     net.stop()
-    # oai_net.remove()
+    

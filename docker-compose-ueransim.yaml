@@ -41,6 +41,9 @@ services:
             - SD_C=128
             - SST_D=128
             - SD_D=128
+        # volumes:
+        #     - ./conf/custom-gnb.yaml:/ueransim/etc/custom-gnb.yaml
+        #     - ./conf/custom-ue.yaml:/ueransim/etc/custom-ue.yaml
         networks:
             public_net:
                 ipv4_address: 192.168.70.152
