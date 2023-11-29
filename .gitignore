@@ -1,3 +1,4 @@
 components/dockerfile/*
 components/push_dockerhub.py
 components/__pycache__
+log/*

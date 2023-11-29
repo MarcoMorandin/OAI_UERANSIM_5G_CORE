@@ -1,16 +1,13 @@
 import os, sys
 import docker
+from components.remove_containers import *
+
 
 
 client = docker.from_env()
 images = client.images
-containers = client.containers
 
-for container in containers.list():
-    if("networking2" in str(container.image)):
-        container.kill()
-
-print("****** All networking2 containers are killed ******")
+remove_containers()
 
 for image in images.list():
     if("networking2" in str(image)):

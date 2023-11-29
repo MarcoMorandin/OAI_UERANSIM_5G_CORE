@@ -10,6 +10,7 @@
 
 import os
 import docker
+import time
 
 from comnetsemu.cli import CLI
 from comnetsemu.net import Containernet, VNFManager
@@ -224,11 +225,11 @@ if __name__ == "__main__":
                 "AUSF_PORT": "8080",
                 "UDM_PORT": "8080",
             },
-            # "ports": {
-            #     "80/tcp": 80,
-            #     "8080/tcp": 8080,
-            #     "38412/sctp": 38412,
-            # },
+            "ports": {
+                "80/tcp": 80,
+                "8080/tcp": 8080,
+                "38412/sctp": 38412,
+            },
         },
     )
 
@@ -335,74 +336,72 @@ if __name__ == "__main__":
         },
     )
 
-    # info("*** Adding gNB\n")
-    # gnb = net.addDockerHost(
-    #     "gnb", 
-    #     dimage="rohankharade/ueransim:latest",
-    #     docker_args={
-    #         "cap_add": ["NET_ADMIN"],
-    #         "environment": {
-    #             "MCC":"208",
-    #             "MNC":"95",
-    #             "NCI":"0x000000010",
-    #             "TAC":"0xa000",
-    #             "LINK_IP":"192.168.70.152",
-    #             "NGAP_IP":"192.168.70.152",
-    #             "GTP_IP":"192.168.70.152",
-    #             "NGAP_PEER_IP":"192.168.70.138",
-    #             "SST":"128",
-    #             "SD":"128",
-    #             "SST_0":"128",
-    #             "SD_0":"128",
-    #             "SST_1":"1",
-    #             "SD_1":"0",
-    #             "SST_2":"131",
-    #             "SD_2":"131",
-    #             "IGNORE_STREAM_IDS":"true",
-    #         },
-    #         "healthcheck": {
-    #             "test": "/bin/bash -c \"ifconfig uesimtun0\"",
-    #             "interval": 10000000000,
-    #             "timeout": 5000000000,
-    #             "retries": 10,
-    #         },
-    #     },
-    # )
+    time.sleep(20)
 
-    # info("*** Adding UE\n")
-    # ue = net.addDockerHost(
-    #     "ue", 
-    #     dimage="rohankharade/ueransim:latest",
-    #     docker_args={
-    #         "environment" : {
-    #             "NUMBER_OF_UE":"10",
-    #             "IMSI":"208960000000036",
-    #             "KEY":"0C0A34601D4F07677303652C0462535B",
-    #             "OP":"63bfa50ee6523365ff14c1f45f88737d",
-    #             "OP_TYPE":"OPC",
-    #             "AMF_VALUE":"8000",
-    #             "IMEI":"356938035643803",
-    #             "IMEI_SV":"0035609204079514",
-    #             "GNB_IP_ADDRESS":"192.168.70.152",
-    #             "PDU_TYPE":"IPv4",
-    #             "APN":"default",
-    #             "SST_R":"128", #Requested N-SSAI
-    #             "SD_R":"128",
-    #             "SST_C":"128", 
-    #             "SD_C":"128",
-    #             "SST_D":"128",
-    #             "SD_D":"128",
-    #         }, 
-                       
-    #         "cap_add": ["NET_ADMIN"],
-    #         "healthcheck": {
-    #             "test": "/bin/bash -c \"ifconfig uesimtun0\"",
-    #             "interval": 10000000000,
-    #             "timeout": 5000000000,
-    #             "retries": 10,
-    #         },
-    #     },
-    # )
+    info("*** Adding gNB\n")
+    gnb = net.addDockerHost(
+        "gnb", 
+        dimage="networking2/ueransim:3.2.6",
+        dcmd="bash /mnt/ueransim/gnb_init.sh",
+        docker_args={
+            "volumes": {
+                prj_folder + "/ueransim/config": {
+                    "bind": "/mnt/ueransim",
+                    "mode": "rw",
+                },
+                prj_folder + "/log": {
+                    "bind": "/mnt/log",
+                    "mode": "rw",
+                },
+                "/etc/timezone": {
+                    "bind": "/etc/timezone",
+                    "mode": "ro",
+                },
+                "/etc/localtime": {
+                    "bind": "/etc/localtime",
+                    "mode": "ro",
+                },
+                "/dev": {
+                    "bind": "/dev",
+                    "mode": "rw"
+                },
+            },
+            "cap_add": ["NET_ADMIN"],
+            "devices": "/dev/net/tun:/dev/net/tun:rwm"
+        },
+    )
+
+    info("*** Adding UE\n")
+    ue = net.addDockerHost(
+        "ue", 
+        dimage="networking2/ueransim:3.2.6",
+
+        dcmd="bash /mnt/ueransim/ue_init.sh",
+        docker_args={
+            "volumes": {
+                prj_folder + "/ueransim/config": {
+                    "bind": "/mnt/ueransim",
+                    "mode": "rw",
+                },
+                prj_folder + "/log": {
+                    "bind": "/mnt/log",
+                    "mode": "rw",
+                },
+                "/etc/timezone": {
+                    "bind": "/etc/timezone",
+                    "mode": "ro",
+                },
+                "/etc/localtime": {
+                    "bind": "/etc/localtime",
+                    "mode": "ro",
+                },
+                "/dev": {"bind": "/dev", "mode": "rw"},
+            },
+            "cap_add": ["NET_ADMIN"],
+            "devices": "/dev/net/tun:/dev/net/tun:rwm"
+        },
+    )
+
 
     info("*** Add controller\n")
     net.addController("c0")
@@ -426,6 +425,9 @@ if __name__ == "__main__":
     net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
     net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.70.145/24'})
     
+    net.addLink(ue,  s1, bw=1000, delay="1ms", intfName1="ue-s1",  intfName2="s1-ue", params1={'ip': '192.168.70.153/24'})
+    net.addLink(gnb, s1, bw=1000, delay="1ms", intfName1="gnb-s1", intfName2="s1-gnb", params1={'ip': '192.168.70.152/24'})
+
     client.containers.get("oai-ext-dn").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.2/32 via 192.168.70.142 dev ext_dn-s3;\"")
 
     info("\n*** Starting network\n")

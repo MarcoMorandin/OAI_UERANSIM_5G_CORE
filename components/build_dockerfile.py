@@ -14,7 +14,8 @@ def build_images(basedir = "./"):
                     "oai-smf:v1.5.1",
                     "oai-spgwu-tiny:v1.5.1",
                     "oai-upf-vpp:v1.5.1",
-                    "mysql-net:8.0"]
+                    "mysql-net:8.0",
+                    "ueransim:3.2.6"]
 
     components = [(base_tag + component) for component in components]
 
@@ -28,8 +29,7 @@ def build_images(basedir = "./"):
     if len(components):
         print("********* Some required images are missed *********")
         print("********* Now downloading and rebuilding all required images *********")
-        login = subprocess.check_output("docker system info | grep -E 'Username|Registry'", shell=True)
-        login = login.decode("utf-8")
+        login = subprocess.check_output("docker system info | grep -E 'Username|Registry'", shell=True).decode("utf-8")
         if "Username" not in login:
             print("********* In order to download all docker images you must login to DockerHub *********")
             os.system("/bin/bash -c \"docker login\"")
@@ -47,6 +47,9 @@ def build_images(basedir = "./"):
                 image = client.images.build(path=basedir + "dockerfile/", dockerfile="Dockerfile." + tmp, tag=component, rm=True)
             if("mysql" in component):
                 image = client.images.build(path=basedir + "mysql-net/", dockerfile="Dockerfile.debian", tag=component, rm=True)
-            print(f"********* FINISHED Downloading and rebuilding of oai-{tmp} *********")    
+            if("ueransim" in component):
+                client.images.pull(repository="rfed/myueransim_v3-2-6")
+                os.system("/bin/bash -c \"docker tag rfed/myueransim_v3-2-6  networking2/ueransim:3.2.6 && docker rmi rfed/myueransim_v3-2-6\"")
+            print(f"********* FINISHED Downloading and rebuilding of {tmp} *********")    
     else:
         print("********* All Docker Images are already present *********")
