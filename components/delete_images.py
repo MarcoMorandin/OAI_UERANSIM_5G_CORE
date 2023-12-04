@@ -1,6 +1,6 @@
 import os, sys
 import docker
-from components.remove_containers import *
+from remove_containers import *
 
 
 
