@@ -6,7 +6,8 @@ def build_images(basedir = "./"):
     
     presence_array = []
     base_tag = "networking2/"
-    components = [  "oai-udr:v1.5.1",
+    components = [  "oai-nssf:v1.5.1",
+                    "oai-udr:v1.5.1",
                     "oai-udm:v1.5.1",
                     "oai-ausf:v1.5.1",
                     "oai-nrf:v1.5.1",
@@ -47,9 +48,9 @@ def build_images(basedir = "./"):
                 image = client.images.build(path=basedir + "dockerfile/", dockerfile="Dockerfile." + tmp, tag=component, rm=True)
             if("mysql" in component):
                 image = client.images.build(path=basedir + "mysql-net/", dockerfile="Dockerfile.debian", tag=component, rm=True)
-            if("ueransim" in component):
-                client.images.pull(repository="rfed/myueransim_v3-2-6")
-                os.system("/bin/bash -c \"docker tag rfed/myueransim_v3-2-6  networking2/ueransim:3.2.6 && docker rmi rfed/myueransim_v3-2-6\"")
+            # if("ueransim" in component):
+            #     client.images.pull(repository="rfed/myueransim_v3-2-6")
+            #     os.system("/bin/bash -c \"docker tag rfed/myueransim_v3-2-6  networking2/ueransim:3.2.6 && docker rmi rfed/myueransim_v3-2-6\"")
             print(f"********* FINISHED Downloading and rebuilding of {tmp} *********")    
     else:
         print("********* All Docker Images are already present *********")
