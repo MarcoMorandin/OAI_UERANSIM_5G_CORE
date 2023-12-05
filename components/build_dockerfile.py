@@ -14,17 +14,8 @@ def build_images(basedir = "./"):
                     "oai-amf:v1.5.1",
                     "oai-smf:v1.5.1",
                     "oai-spgwu-tiny:v1.5.1",
-                    "oai-upf-vpp:v1.5.1",
-                    "mysql-net:8.0",
                     "ueransim:3.2.6"]
 
-    components = [  "oai-udr:v1.5.1",
-                    "oai-udm:v1.5.1",
-                    "oai-ausf:v1.5.1",
-                    "oai-nrf:v1.5.1",
-                    "oai-amf:v1.5.1",
-                    "oai-smf:v1.5.1",
-                    "mysql-net:8.0"]
 
     components = [(base_tag + component) for component in components]
 
@@ -59,7 +50,17 @@ def build_images(basedir = "./"):
                 f.close()
                 image = client.images.build(path=basedir + "dockerfile/", dockerfile="Dockerfile." + name, tag=component, rm=True)
             if("mysql" in component):
-                image = client.images.build(path=basedir + "mysql-net/", dockerfile="Dockerfile.debian", tag=component, rm=True)
+                # f = open(basedir + "dockerfile/Dockerfile.mysql", "w")
+                # f.write(    
+                #             "#syntax=docker/dockerfile:1\n" +
+                #             f"FROM mysql:8.0.35-debian\n" +
+                #             "RUN apt-get update\n" +
+                #             "RUN apt-get install -y --no-install-recommends iproute2 net-tools\n" +
+                #             "RUN apt-get autoremove -y && apt-get autoclean\n"
+                #         )
+                # f.close()
+                # image = client.images.build(path=basedir + "dockerfile/", dockerfile="Dockerfile.mysql", tag=component, rm=True)
+                print("ok")
             if("ueransim" in component):
                 client.images.pull(repository="rfed/myueransim_v3-2-6")
                 os.system("/bin/bash -c \"docker tag rfed/myueransim_v3-2-6  networking2/ueransim:3.2.6 && docker rmi rfed/myueransim_v3-2-6\"")
