@@ -106,10 +106,43 @@ if __name__ == "__main__":
     time.sleep(1)
     client.containers.get("oai-nrf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
+    # info("*** Adding NSSF container\n")
+    # nssf = net.addDockerHost(
+    #     "oai-nssf",
+    #     dimage="networking2/oai-nssf:v1.5.1",
+    #     ip="192.168.70.132/24",
+    #     docker_args={
+    #         # "privileged": True,
+    #         "volumes": {
+    #             prj_folder + "/nssf_slice_config.yaml": {
+    #                 "bind": "/openair-nssf/etc/nssf_slice_config.yaml",
+    #                 "mode": "rw",
+    #             },
+    #         },
+    #         "environment": {
+    #             "TZ": "Europe/Paris",
+    #             "NSSF_NAME": "oai-nssf",
+    #             "NSSF_FQDN": "nssf.oai-5gcn.eur",
+    #             "SBI_IF_NAME": "nssf-s3",
+    #             "SBI_PORT_HTTP2": "8080",
+    #             "SBI_API_VERSION": "v1",
+    #             # NSSF is not registered to NRF
+    #             "NSSF_SLICE_CONFIG": "/openair-nssf/etc/nssf_slice_config.yaml",
+    #         },
+    #         "cap_add": ["NET_ADMIN", "SYS_ADMIN"],
+    #         "cap_drop": ["ALL"],
+    #         # "ports": {
+    #         #     "80/tcp": 80,
+    #         #     "8080/tcp": 8080,
+    #         # },
+    #     },
+    # )
+
     info("*** Adding UDR container\n")
     udr = net.addDockerHost(
         "oai-udr",
         dimage="networking2/oai-udr:v1.5.1",
+        ip="192.168.70.133/24",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -120,10 +153,13 @@ if __name__ == "__main__":
                 "MYSQL_PASS": "test",
                 "MYSQL_DB": "oai_db",
                 "WAIT_MYSQL": "120",
-                # UDR is not registered to NRF
+                "USE_FQDN_DNS": "yes",
+                "REGISTER_NRF": "yes",
+                "NRF_IPV4_ADDRESS": "192.168.70.136",
+                "NRF_FQDN": "oai-nrf",
                 # changes for HTTP2
                 "USE_HTTP2": "yes",
-                "UDR_INTERFACE_HTTP2_PORT_FOR_NUDR": "8080",
+                "NRF_PORT": "8080",
             },
         }
     )
@@ -135,6 +171,7 @@ if __name__ == "__main__":
     udm = net.addDockerHost(
         "oai-udm",
         dimage="networking2/oai-udm:v1.5.1",
+        ip="192.168.70.134/24",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -143,12 +180,14 @@ if __name__ == "__main__":
                 "USE_FQDN_DNS": "no",
                 # UDM is not registered to NRF
                 "UDR_IP_ADDRESS": "192.168.70.133",
-                "UDR_VERSION_NB": "v1",
+                "UDR_PORT": "8080",
                 "UDR_FQDN": "oai-udr",
+                "REGISTER_NRF": "yes",
+                "NRF_IPV4_ADDRESS": "192.168.70.136",
+                "NRF_FQDN": "oai-nrf",
                 # changes for HTTP2
                 "USE_HTTP2": "yes",
-                "SBI_HTTP2_PORT": "8080",
-                "UDR_PORT": "8080",
+                "NRF_PORT": "8080",
             },
         },
     )
@@ -160,6 +199,7 @@ if __name__ == "__main__":
     ausf = net.addDockerHost(
         "oai-ausf",
         dimage="networking2/oai-ausf:v1.5.1",
+        ip="192.168.70.135/24",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -168,11 +208,14 @@ if __name__ == "__main__":
                 "USE_FQDN_DNS": "no",
                 # UDM is not registered to NRF
                 "UDM_IP_ADDRESS": "192.168.70.134",
-                "UDM_VERSION_NB": "v1",
                 "UDM_FQDN": "oai-udm",
+                "REGISTER_NRF": "yes",
+                "NRF_IPV4_ADDRESS": "192.168.70.136",
+                "NRF_FQDN": "oai-nrf",
                 # changes for HTTP2
                 "USE_HTTP2": "yes",
                 "UDM_PORT": "8080",
+                "NRF_PORT": "8080",
             },
         },
     )
@@ -184,6 +227,7 @@ if __name__ == "__main__":
     amf = net.addDockerHost(
         "oai-amf",
         dimage="networking2/oai-amf:v1.5.1",
+        ip="192.168.70.138/24",
         docker_args={
             "environment": {
                 "TZ":"Europe/Paris",
@@ -233,6 +277,7 @@ if __name__ == "__main__":
     smf = net.addDockerHost(
         "oai-smf",
         dimage="networking2/oai-smf:v1.5.1",
+        ip="192.168.70.139/24",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -243,12 +288,13 @@ if __name__ == "__main__":
                 "DEFAULT_DNS_SEC_IPV4_ADDRESS": "8.8.8.8",
                 "AMF_IPV4_ADDRESS": "192.168.70.138",
                 "AMF_FQDN": "oai-amf",
-                "UDM_IPV4_ADDRESS": "192.168.70.134",
-                "UDM_FQDN": "oai-udm",
-                "UPF_IPV4_ADDRESS": "127.0.0.1",
-                "UPF_FQDN_0": "localhost",
+                # "UDM_IPV4_ADDRESS": "192.168.70.134",
+                # "UDM_FQDN": "oai-udm",
+                "UPF_IPV4_ADDRESS": "192.168.70.142",
+                "UPF_FQDN_0": "oai-spgwu",
                 "NRF_IPV4_ADDRESS": "192.168.70.136",
                 "NRF_FQDN": "oai-nrf",
+                "USE_LOCAL_SUBSCRIPTION_INFO": "yes",
                 "REGISTER_NRF": "yes",
                 "DISCOVER_UPF": "yes",
                 "DISCOVER_PCF": "no",
@@ -256,7 +302,7 @@ if __name__ == "__main__":
                 "USE_LOCAL_PCC_RULES": "yes",
                 "USE_FQDN_DNS": "no",
                 # One single slice is defined.
-                "DNN_NI0": "default",
+                "DNN_NI0": "oai",
                 "TYPE0": "IPv4",
                 "DNN_RANGE0": "12.2.1.2 - 12.2.1.254",
                 "NSSAI_SST0": "128",
@@ -266,8 +312,9 @@ if __name__ == "__main__":
                 # changes for HTTP2
                 "HTTP_VERSION": "2",
                 "AMF_PORT": "8080",
-                "UDM_PORT": "8080",
+                # "UDM_PORT": "8080",
                 "NRF_PORT": "8080",
+                "UE_MTU": "1500",
             },
         },
     )

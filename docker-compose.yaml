@@ -4,7 +4,7 @@ services:
         container_name: "mysql"
         image: networking2/mysql-net:8.0
         volumes:
-            - ./database/oai_db.sql:/docker-entrypoint-initdb.d/oai_db.sql
+            - ./database/oai_db-basic.sql:/docker-entrypoint-initdb.d/oai_db.sql
             - ./healthscripts/mysql-healthcheck2.sh:/tmp/mysql-healthcheck.sh
         environment:
             - TZ=Europe/Paris
@@ -24,32 +24,32 @@ services:
         networks:
             public_net:
                 ipv4_address: 192.168.70.131
-    # oai-nssf:
-    #     container_name: "oai-nssf"
-    #     image: oaisoftwarealliance/oai-nssf:v1.5.1
-    #     expose:
-    #         - 80/tcp
-    #         - 8080/tcp
-    #     environment:
-    #         - TZ=Europe/Paris
-    #         - NSSF_NAME=oai-nssf
-    #         - NSSF_FQDN=nssf.oai-5gcn.eur
-    #         - SBI_IF_NAME=eth0
-    #         - SBI_PORT_HTTP2=8080
-    #         - SBI_API_VERSION=v1
-    #         # NSSF is not registered to NRF
-    #         - NSSF_SLICE_CONFIG=/openair-nssf/etc/nssf_slice_config.yaml
-    #     cap_add:
-    #         - NET_ADMIN
-    #         - SYS_ADMIN
-    #     cap_drop:
-    #         - ALL
-    #     privileged: true
-    #     volumes: 
-    #         - ./nssf_slice_config.yaml:/openair-nssf/etc/nssf_slice_config.yaml
-    #     networks:
-    #         public_net:
-    #             ipv4_address: 192.168.70.132
+    oai-nssf:
+        container_name: "oai-nssf"
+        image: oaisoftwarealliance/oai-nssf:v1.5.1
+        expose:
+            - 80/tcp
+            - 8080/tcp
+        environment:
+            - TZ=Europe/Paris
+            - NSSF_NAME=oai-nssf
+            - NSSF_FQDN=nssf.oai-5gcn.eur
+            - SBI_IF_NAME=eth0
+            - SBI_PORT_HTTP2=8080
+            - SBI_API_VERSION=v1
+            # NSSF is not registered to NRF
+            - NSSF_SLICE_CONFIG=/openair-nssf/etc/nssf_slice_config.yaml
+        cap_add:
+            - NET_ADMIN
+            - SYS_ADMIN
+        cap_drop:
+            - ALL
+        privileged: true
+        volumes: 
+            - ./nssf_slice_config.yaml:/openair-nssf/etc/nssf_slice_config.yaml
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.132
     oai_udr:
         container_name: "oai-udr"
         image: oaisoftwarealliance/oai-udr:v1.5.1
@@ -137,24 +137,22 @@ services:
         networks:
             public_net:
                 ipv4_address: 192.168.70.136
-    # oai_nrf_slice3:
-    #     container_name: "oai-nrf-slice3"
-    #     image: oaisoftwarealliance/oai-nrf:v1.5.1
-    #     expose:
-    #         - 80/tcp
-    #         - 8080/tcp
-    #     environment:
-    #         - TZ=Europe/Paris
-    #         - NRF_INTERFACE_NAME_FOR_SBI=eth0
-    #         # The default HTTP2 port is 8080 for all network functions
-    #         # It is shown here as example.
-    #         # If you wish to change, you have to specify it for each NF
-    #         - NRF_INTERFACE_HTTP2_PORT_FOR_SBI=8080
-    #     networks:
-    #         public_net:
-    #             ipv4_address: 192.168.70.137
-    
-    
+    oai_nrf_slice3:
+        container_name: "oai-nrf-slice3"
+        image: oaisoftwarealliance/oai-nrf:v1.5.1
+        expose:
+            - 80/tcp
+            - 8080/tcp
+        environment:
+            - TZ=Europe/Paris
+            - NRF_INTERFACE_NAME_FOR_SBI=eth0
+            # The default HTTP2 port is 8080 for all network functions
+            # It is shown here as example.
+            # If you wish to change, you have to specify it for each NF
+            - NRF_INTERFACE_HTTP2_PORT_FOR_SBI=8080
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.137
     oai_amf:
         container_name: "oai-amf"
         image: oaisoftwarealliance/oai-amf:v1.5.1
@@ -216,6 +214,7 @@ services:
         depends_on:
             - mysql
             - oai_nrf_slice12
+            - vpp_upf_slice3
             - oai_ausf
             - oai_udm
         networks:
@@ -269,101 +268,101 @@ services:
         networks:
             public_net:
                 ipv4_address: 192.168.70.139
-    # oai_smf_slice2:
-    #     container_name: "oai-smf-slice2"
-    #     image: oaisoftwarealliance/oai-smf:v1.5.1
-    #     expose:
-    #         - 80/tcp
-    #         - 8080/tcp
-    #         - 8805/udp
-    #     environment:
-    #         - TZ=Europe/Paris
-    #         - SMF_INTERFACE_NAME_FOR_N4=eth0
-    #         - SMF_INTERFACE_NAME_FOR_SBI=eth0
-    #         - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=8080
-    #         - DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
-    #         - DEFAULT_DNS_SEC_IPV4_ADDRESS=8.8.8.8
-    #         - AMF_IPV4_ADDRESS=192.168.70.138
-    #         - AMF_FQDN=oai_amf
-    #         - UDM_IPV4_ADDRESS=192.168.70.134
-    #         - UDM_FQDN=localhost
-    #         - UPF_IPV4_ADDRESS=0.0.0.0
-    #         - UPF_FQDN_0=localhost
-    #         - NRF_IPV4_ADDRESS=192.168.70.136
-    #         - NRF_FQDN=oai_nrf_slice12
-    #         - REGISTER_NRF=yes
-    #         - DISCOVER_UPF=yes
-    #         - DISCOVER_PCF=no
-    #         - USE_LOCAL_SUBSCRIPTION_INFO=yes
-    #         - USE_LOCAL_PCC_RULES=yes
-    #         - USE_FQDN_DNS=yes
-    #         # One single slice is defined.
-    #         - DNN_NI0=oai
-    #         - TYPE0=IPv4
-    #         - DNN_RANGE0=12.1.1.129 - 12.1.1.224
-    #         - NSSAI_SST0=1
-    #         - SESSION_AMBR_UL0=200Mbps
-    #         - SESSION_AMBR_DL0=400Mbps
-    #         # changes for HTTP2
-    #         - HTTP_VERSION=2
-    #         - AMF_PORT=8080
-    #         - UDM_PORT=8080
-    #         - NRF_PORT=8080
-    #     depends_on:
-    #         - oai_amf
-    #         - oai_nrf_slice12
-    #     networks:
-    #         public_net:
-    #             ipv4_address: 192.168.70.140
-    # oai_smf_slice3:
-    #     container_name: "oai-smf-slice3"
-    #     image: oaisoftwarealliance/oai-smf:v1.5.1
-    #     expose:
-    #         - 80/tcp
-    #         - 8080/tcp
-    #         - 8805/udp
-    #     environment:
-    #         - TZ=Europe/Paris
-    #         - SMF_INTERFACE_NAME_FOR_N4=eth0
-    #         - SMF_INTERFACE_NAME_FOR_SBI=eth0
-    #         - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=8080
-    #         - DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
-    #         - DEFAULT_DNS_SEC_IPV4_ADDRESS=8.8.8.8
-    #         - AMF_IPV4_ADDRESS=192.168.70.138
-    #         - AMF_FQDN=oai_amf
-    #         - UDM_IPV4_ADDRESS=192.168.70.134
-    #         - UDM_FQDN=localhost
-    #         - UPF_IPV4_ADDRESS=0.0.0.0
-    #         - UPF_FQDN_0=localhost
-    #         - NRF_IPV4_ADDRESS=192.168.70.137
-    #         - NRF_FQDN=oai_nrf_slice3
-    #         - REGISTER_NRF=yes
-    #         - DISCOVER_UPF=yes
-    #         - DISCOVER_PCF=no
-    #         - USE_LOCAL_SUBSCRIPTION_INFO=yes
-    #         - USE_LOCAL_PCC_RULES=yes
-    #         - USE_FQDN_DNS=yes
-    #         # One single slice is defined.
-    #         - DNN_NI0=oai.ipv4
-    #         - TYPE0=IPv4
-    #         - DNN_RANGE0=12.1.1.2 - 12.1.1.128
-    #         - NSSAI_SST0=130
-    #         - NSSAI_SD0=130
-    #         - SESSION_AMBR_UL0=100Mbps
-    #         - SESSION_AMBR_DL0=200Mbps
-    #         # changes for HTTP2
-    #         - HTTP_VERSION=2
-    #         - AMF_PORT=8080
-    #         - UDM_PORT=8080
-    #         - NRF_PORT=8080
-    #     depends_on:
-    #         - oai_amf
-    #         - oai_nrf_slice3
-    #     extra_hosts:
-    #         - "vpp-upf.node.5gcn.mnc95.mcc208.3gppnetwork.org:192.168.70.201"
-    #     networks:
-    #         public_net:
-    #             ipv4_address: 192.168.70.141
+    oai_smf_slice2:
+        container_name: "oai-smf-slice2"
+        image: oaisoftwarealliance/oai-smf:v1.5.1
+        expose:
+            - 80/tcp
+            - 8080/tcp
+            - 8805/udp
+        environment:
+            - TZ=Europe/Paris
+            - SMF_INTERFACE_NAME_FOR_N4=eth0
+            - SMF_INTERFACE_NAME_FOR_SBI=eth0
+            - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=8080
+            - DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
+            - DEFAULT_DNS_SEC_IPV4_ADDRESS=8.8.8.8
+            - AMF_IPV4_ADDRESS=192.168.70.138
+            - AMF_FQDN=oai_amf
+            - UDM_IPV4_ADDRESS=192.168.70.134
+            - UDM_FQDN=localhost
+            - UPF_IPV4_ADDRESS=0.0.0.0
+            - UPF_FQDN_0=localhost
+            - NRF_IPV4_ADDRESS=192.168.70.136
+            - NRF_FQDN=oai_nrf_slice12
+            - REGISTER_NRF=yes
+            - DISCOVER_UPF=yes
+            - DISCOVER_PCF=no
+            - USE_LOCAL_SUBSCRIPTION_INFO=yes
+            - USE_LOCAL_PCC_RULES=yes
+            - USE_FQDN_DNS=yes
+            # One single slice is defined.
+            - DNN_NI0=oai
+            - TYPE0=IPv4
+            - DNN_RANGE0=12.1.1.129 - 12.1.1.224
+            - NSSAI_SST0=1
+            - SESSION_AMBR_UL0=200Mbps
+            - SESSION_AMBR_DL0=400Mbps
+            # changes for HTTP2
+            - HTTP_VERSION=2
+            - AMF_PORT=8080
+            - UDM_PORT=8080
+            - NRF_PORT=8080
+        depends_on:
+            - oai_amf
+            - oai_nrf_slice12
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.140
+    oai_smf_slice3:
+        container_name: "oai-smf-slice3"
+        image: oaisoftwarealliance/oai-smf:v1.5.1
+        expose:
+            - 80/tcp
+            - 8080/tcp
+            - 8805/udp
+        environment:
+            - TZ=Europe/Paris
+            - SMF_INTERFACE_NAME_FOR_N4=eth0
+            - SMF_INTERFACE_NAME_FOR_SBI=eth0
+            - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=8080
+            - DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
+            - DEFAULT_DNS_SEC_IPV4_ADDRESS=8.8.8.8
+            - AMF_IPV4_ADDRESS=192.168.70.138
+            - AMF_FQDN=oai_amf
+            - UDM_IPV4_ADDRESS=192.168.70.134
+            - UDM_FQDN=localhost
+            - UPF_IPV4_ADDRESS=0.0.0.0
+            - UPF_FQDN_0=localhost
+            - NRF_IPV4_ADDRESS=192.168.70.137
+            - NRF_FQDN=oai_nrf_slice3
+            - REGISTER_NRF=yes
+            - DISCOVER_UPF=yes
+            - DISCOVER_PCF=no
+            - USE_LOCAL_SUBSCRIPTION_INFO=yes
+            - USE_LOCAL_PCC_RULES=yes
+            - USE_FQDN_DNS=yes
+            # One single slice is defined.
+            - DNN_NI0=oai.ipv4
+            - TYPE0=IPv4
+            - DNN_RANGE0=12.1.1.2 - 12.1.1.128
+            - NSSAI_SST0=130
+            - NSSAI_SD0=130
+            - SESSION_AMBR_UL0=100Mbps
+            - SESSION_AMBR_DL0=200Mbps
+            # changes for HTTP2
+            - HTTP_VERSION=2
+            - AMF_PORT=8080
+            - UDM_PORT=8080
+            - NRF_PORT=8080
+        depends_on:
+            - oai_amf
+            - oai_nrf_slice3
+        extra_hosts:
+            - "vpp-upf.node.5gcn.mnc95.mcc208.3gppnetwork.org:192.168.70.201"
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.141
     oai_spgwu_slice1:
         container_name: "oai-spgwu-slice1"
         image: oaisoftwarealliance/oai-spgwu-tiny:v1.5.1
@@ -404,87 +403,87 @@ services:
         networks:
             public_net:
                 ipv4_address: 192.168.70.142
-#     oai_spgwu_slice2:
-#         container_name: "oai-spgwu-slice2"
-#         image: oaisoftwarealliance/oai-spgwu-tiny:v1.5.1
-#         expose:
-#             - 2152/udp
-#             - 8805/udp
-#             - 8080/tcp
-#         environment:
-#             - TZ=Europe/Paris
-#             - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0
-#             - SGW_INTERFACE_NAME_FOR_SX=eth0
-#             - PGW_INTERFACE_NAME_FOR_SGI=eth0
-#             - NETWORK_UE_NAT_OPTION=yes
-#             - NETWORK_UE_IP=12.1.1.0/24
-#             - ENABLE_5G_FEATURES=yes
-#             - REGISTER_NRF=yes
-#             - USE_FQDN_NRF=yes
-#             - UPF_FQDN_5G=oai_spgwu_slice2
-#             - NRF_IPV4_ADDRESS=192.168.70.136
-#             - NRF_API_VERSION=v1
-#             - NRF_FQDN=oai_nrf_slice12
-#             # Mandatory to set the NRF PORT to 8080 (it is set to default to 80 otherwise)
-#             - HTTP_VERSION=2
-#             - NRF_PORT=8080
-#             # One single slice / DNN is defined
-#             - NSSAI_SST_0=1
-#             - DNN_0=oai
-#         depends_on:
-#             - oai_nrf_slice12
-#         cap_add:
-#             - NET_ADMIN
-#             - SYS_ADMIN
-#         cap_drop:
-#             - ALL
-#         privileged: true
-#         networks:
-#             public_net:
-#                 ipv4_address: 192.168.70.143
-#     vpp_upf_slice3:
-#         container_name: "vpp-upf-slice3"
-#         image: oaisoftwarealliance/oai-upf-vpp:v1.5.1
-#         privileged: true
-#         environment:
-#             - IF_1_IP=192.168.70.201
-#             - IF_1_TYPE=N4
-#             - IF_2_IP=192.168.72.201
-#             - IF_2_TYPE=N3
-#             - IF_2_NWI=access.oai.org
-#             - IF_3_IP=192.168.73.201
-#             - IF_3_TYPE=N6
-#             - IF_3_IP_REMOTE=192.168.73.145 # EXT-DN IP Address
-#             - IF_3_NWI=internet.oai.org
-#             - NAME=VPP-UPF
-#             - MNC=95
-#             - MCC=208
-#             - REALM=3gppnetwork.org
-#             - VPP_MAIN_CORE=0
-#             - VPP_CORE_WORKER=1
-# #           - VPP_PLUGIN_PATH=/usr/lib64/vpp_plugins/                # RHEL7
-#             - VPP_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/vpp_plugins/
-#             - SNSSAI_SD=130
-#             - SNSSAI_SST=130
-#             - DNN=oai.ipv4
-#             - REGISTER_NRF=yes
-#             - NRF_IP_ADDR=192.168.70.137
-#             - NRF_PORT=8080
-#             - HTTP_VERSION=2
-#         depends_on:
-#             - oai_nrf_slice3
-#         healthcheck:
-#             test: /bin/bash -c "pgrep vpp"
-#             interval: 10s
-#             timeout: 5s
-#             retries: 5
-#         networks:
-#             public_net:
-#                 ipv4_address: 192.168.70.144
-#             public_net_access:
-#                 ipv4_address: 192.168.72.144
-#             public_net_core:
-#                 ipv4_address: 192.168.73.144
+    oai_spgwu_slice2:
+        container_name: "oai-spgwu-slice2"
+        image: oaisoftwarealliance/oai-spgwu-tiny:v1.5.1
+        expose:
+            - 2152/udp
+            - 8805/udp
+            - 8080/tcp
+        environment:
+            - TZ=Europe/Paris
+            - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0
+            - SGW_INTERFACE_NAME_FOR_SX=eth0
+            - PGW_INTERFACE_NAME_FOR_SGI=eth0
+            - NETWORK_UE_NAT_OPTION=yes
+            - NETWORK_UE_IP=12.1.1.0/24
+            - ENABLE_5G_FEATURES=yes
+            - REGISTER_NRF=yes
+            - USE_FQDN_NRF=yes
+            - UPF_FQDN_5G=oai_spgwu_slice2
+            - NRF_IPV4_ADDRESS=192.168.70.136
+            - NRF_API_VERSION=v1
+            - NRF_FQDN=oai_nrf_slice12
+            # Mandatory to set the NRF PORT to 8080 (it is set to default to 80 otherwise)
+            - HTTP_VERSION=2
+            - NRF_PORT=8080
+            # One single slice / DNN is defined
+            - NSSAI_SST_0=1
+            - DNN_0=oai
+        depends_on:
+            - oai_nrf_slice12
+        cap_add:
+            - NET_ADMIN
+            - SYS_ADMIN
+        cap_drop:
+            - ALL
+        privileged: true
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.143
+    vpp_upf_slice3:
+        container_name: "vpp-upf-slice3"
+        image: oaisoftwarealliance/oai-upf-vpp:v1.5.1
+        privileged: true
+        environment:
+            - IF_1_IP=192.168.70.201
+            - IF_1_TYPE=N4
+            - IF_2_IP=192.168.72.201
+            - IF_2_TYPE=N3
+            - IF_2_NWI=access.oai.org
+            - IF_3_IP=192.168.73.201
+            - IF_3_TYPE=N6
+            - IF_3_IP_REMOTE=192.168.73.145 # EXT-DN IP Address
+            - IF_3_NWI=internet.oai.org
+            - NAME=VPP-UPF
+            - MNC=95
+            - MCC=208
+            - REALM=3gppnetwork.org
+            - VPP_MAIN_CORE=0
+            - VPP_CORE_WORKER=1
+#           - VPP_PLUGIN_PATH=/usr/lib64/vpp_plugins/                # RHEL7
+            - VPP_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/vpp_plugins/
+            - SNSSAI_SD=130
+            - SNSSAI_SST=130
+            - DNN=oai.ipv4
+            - REGISTER_NRF=yes
+            - NRF_IP_ADDR=192.168.70.137
+            - NRF_PORT=8080
+            - HTTP_VERSION=2
+        depends_on:
+            - oai_nrf_slice3
+        healthcheck:
+            test: /bin/bash -c "pgrep vpp"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.144
+            public_net_access:
+                ipv4_address: 192.168.72.144
+            public_net_core:
+                ipv4_address: 192.168.73.144
     oai_ext_dn:
         image: oaisoftwarealliance/trf-gen-cn5g:latest
         privileged: true
