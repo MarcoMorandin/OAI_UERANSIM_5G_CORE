@@ -469,3 +469,5 @@ if __name__ == "__main__":
     
     os.system("/bin/bash -c \"docker kill mysql\"")
     os.system("/bin/bash -c \"docker rm mysql\"")
+
+    os.system("/bin/bash -c \"docker network prune -f\"")
