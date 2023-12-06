@@ -113,14 +113,10 @@ if __name__ == "__main__":
                 # If you wish to change, you have to specify it for each NF
                 "NRF_INTERFACE_HTTP2_PORT_FOR_SBI": "8080",
             },
-            # "ports": {
-            #     "80/tcp": 80,
-            #     "8080/tcp": 8080,
-            # },
         },
     )
     net.addLink(nrf, s3, bw=1000, delay="1ms", intfName1="nrf-s3", intfName2="s3-nrf", params1={'ip': '192.168.70.136/24'})
-    time.sleep(1)
+    time.sleep(0.5)
     client.containers.get("oai-nrf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
     info("\n*** Adding NSSF container\n")
@@ -154,7 +150,7 @@ if __name__ == "__main__":
         },
     )
     net.addLink(nssf, s3, bw=1000, delay="1ms", intfName1="nssf-s3", intfName2="s3-nssf", params1={'ip': '192.168.70.132/24'})
-    time.sleep(1)
+    time.sleep(0.5)
     client.containers.get("oai-nssf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
     info("\n*** Adding UDR container\n")
@@ -179,14 +175,10 @@ if __name__ == "__main__":
                 "USE_HTTP2": "yes",
                 "NRF_PORT": "8080",
             },
-            # "ports": {
-            #     "80/tcp": 80,
-            #     "8080/tcp": 8080,
-            # },
         }
     )
     net.addLink(udr, s3, bw=1000, delay="1ms", intfName1="udr-s3", intfName2="s3-udr", params1={'ip': '192.168.70.133/24'})
-    time.sleep(1)
+    time.sleep(0.5)
     client.containers.get("oai-udr").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o > /log.txt\"", detach=True)
     oai_net.connect("oai-udr", ipv4_address="192.168.80.132")
 
@@ -211,14 +203,10 @@ if __name__ == "__main__":
                 "USE_HTTP2": "yes",
                 "NRF_PORT": "8080",
             },
-            # "ports": {
-            #     "80/tcp": 80,
-            #     "8080/tcp": 8080,
-            # },
         },
     )
     net.addLink(udm, s3, bw=1000, delay="1ms", intfName1="udm-s3", intfName2="s3-udm", params1={'ip': '192.168.70.134/24'})
-    time.sleep(1)
+    time.sleep(0.5)
     client.containers.get("oai-udm").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
     info("\n*** Adding AUSF container\n")
@@ -242,14 +230,10 @@ if __name__ == "__main__":
                 "UDM_PORT": "8080",
                 "NRF_PORT": "8080",
             },
-            # "ports": {
-            #     "80/tcp": 80,
-            #     "8080/tcp": 8080,
-            # },
         },
     )
     net.addLink(ausf, s3, bw=1000, delay="1ms", intfName1="ausf-s3", intfName2="s3-ausf", params1={'ip': '192.168.70.135/24'})
-    time.sleep(1)
+    time.sleep(0.5)
     client.containers.get("oai-ausf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
     
     info("\n*** Adding AMF container\n")
@@ -295,15 +279,10 @@ if __name__ == "__main__":
                 "AUSF_PORT":"8080",
                 "UDM_PORT":"8080",
             },
-            # "ports": {
-            #     "80/tcp": 80,
-            #     "8080/tcp": 8080,
-            #     "38412/sctp": 38412,
-            # },
         },
     )
     net.addLink(amf, s3, bw=1000, delay="1ms", intfName1="amf-s3", intfName2="s3-amf", params1={'ip': '192.168.70.138/24'})
-    time.sleep(1)
+    time.sleep(0.5)
     client.containers.get("oai-amf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
     info("\n*** Adding SMF container\n")
@@ -348,52 +327,45 @@ if __name__ == "__main__":
                 "NRF_PORT": "8080",
                 "UE_MTU": "1500",
             },
-            # "ports": {
-            #     "80/tcp": 80,
-            #     "8080/tcp": 8080,
-            #     "8805/udp": 8805,
-            # },
         },
     )
     net.addLink(smf, s3, bw=1000, delay="1ms", intfName1="smf-s3", intfName2="s3-smf", params1={'ip': '192.168.70.139/24'})
-    time.sleep(1)
+    time.sleep(0.5)
     client.containers.get("oai-smf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
-    # info("\n*** Adding SPGWU-UPF container\n")
-    # spgwu = net.addDockerHost(
-    #     "oai-spgwu",
-    #     dimage="networking2/oai-spgwu-tiny:v1.5.1",
-    #     docker_args={
-    #         # "privileged": True,
-    #         "environment": {
-    #             "TZ": "Europe/Paris",
-    #             "SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP": "eth0",
-    #             "SGW_INTERFACE_NAME_FOR_SX": "eth0",
-    #             "PGW_INTERFACE_NAME_FOR_SGI": "eth0",
-    #             "NETWORK_UE_NAT_OPTION": "yes",
-    #             "NETWORK_UE_IP": "12.2.1.0/24",
-    #             "ENABLE_5G_FEATURES": "yes",
-    #             "REGISTER_NRF": "yes",
-    #             "USE_FQDN_NRF": "yes",
-    #             "UPF_FQDN_5G": "oai-spgwu",
-    #             "NRF_IPV4_ADDRESS": "192.168.70.136",
-    #             "NRF_API_VERSION": "v1",
-    #             "NRF_FQDN": "oai-nrf",
-    #             # Mandatory to set the NRF PORT to 8080 (it is set to default to 80 otherwise)
-    #             "HTTP_VERSION": "2",
-    #             "NRF_PORT": "8080",
-    #             # One single slice / DNN is defined
-    #             "NSSAI_SST_0": "128",
-    #             "NSSAI_SD_0": "128",
-    #             "DNN_0": "default",
-    #         },
-    #         # "ports": {
-    #         #     "8080/tcp": 8080,
-    #         #     "2152/udp": 2152,
-    #         #     "8805/udp": 8805,
-    #         # },
-    #     },
-    # )
+    info("*** Adding SPGWU-UPF container\n")
+    spgwu = net.addDockerHost(
+        "oai-spgwu",
+        dimage="networking2/oai-spgwu-tiny:v1.5.1",
+        docker_args={
+            # "privileged": True,
+            "environment": {
+                "TZ": "Europe/Paris",
+                "SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP": "spgwu-s2",
+                "SGW_INTERFACE_NAME_FOR_SX": "spgwu-s2",
+                "PGW_INTERFACE_NAME_FOR_SGI": "spgwu-s2",
+                "NETWORK_UE_NAT_OPTION": "yes",
+                "NETWORK_UE_IP": "12.2.1.0/24",
+                "ENABLE_5G_FEATURES": "yes",
+                "REGISTER_NRF": "yes",
+                # "USE_FQDN_NRF": "yes",
+                # "UPF_FQDN_5G": "oai-spgwu",
+                "NRF_IPV4_ADDRESS": "192.168.70.136",
+                "NRF_API_VERSION": "v1",
+                # "NRF_FQDN": "oai-nrf",
+                # Mandatory to set the NRF PORT to 8080 (it is set to default to 80 otherwise)
+                "HTTP_VERSION": "2",
+                "NRF_PORT": "8080",
+                # One single slice / DNN is defined
+                "NSSAI_SST_0": "128",
+                "NSSAI_SD_0": "128",
+                "DNN_0": "default",
+            },
+        }
+    )
+    net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
+    time.sleep(0.5)
+    client.containers.get("oai-spgwu").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_spgwu -c /openair-${CONTAINER_NAME}/etc/spgw_u.conf -o\"", detach=True)
 
     info("\n*** Adding EXT-DN container\n")
     ext_dn = net.addDockerHost(
@@ -413,6 +385,9 @@ if __name__ == "__main__":
         },
     )
     net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.70.145/24'})
+    time.sleep(0.5)
+    client.containers.get("oai-ext-dn").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"")
+    # # ??? ^^^ 12.2.1.0/24
 
     # info("\n*** Adding gNB\n")
     # gnb = net.addDockerHost(
@@ -472,11 +447,6 @@ if __name__ == "__main__":
     #         },
     #     },
     # )
-    
-    # net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
-    
-    client.containers.get("oai-ext-dn").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"")
-    # # ??? ^^^ 12.2.1.0/24
     
     # net.addLink(ue,  s1, bw=1000, delay="1ms", intfName1="ue-s1",  intfName2="s1-ue", params1={'ip': '192.168.70.153/24'})
     # net.addLink(gnb, s1, bw=1000, delay="1ms", intfName1="gnb-s1", intfName2="s1-gnb", params1={'ip': '192.168.70.152/24'})
