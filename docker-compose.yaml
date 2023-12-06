@@ -2,10 +2,10 @@ version: '3.8'
 services:
     mysql:
         container_name: "mysql"
-        image: networking2/mysql-net:8.0
+        image: orac/mysql-net:8.0
         volumes:
-            - ./database/oai_db-basic.sql:/docker-entrypoint-initdb.d/oai_db.sql
-            - ./healthscripts/mysql-healthcheck2.sh:/tmp/mysql-healthcheck.sh
+            - ./database/oai_db.sql:/docker-entrypoint-initdb.d/oai_db.sql
+            - ./healthscripts/mysql-healthcheck.sh:/tmp/mysql-healthcheck.sh
         environment:
             - TZ=Europe/Paris
             - MYSQL_DATABASE=oai_db
@@ -17,10 +17,6 @@ services:
             interval: 10s
             timeout: 5s
             retries: 30
-        expose:
-            - 3306/tcp
-        ports:
-            - "3306:3306"
         networks:
             public_net:
                 ipv4_address: 192.168.70.131

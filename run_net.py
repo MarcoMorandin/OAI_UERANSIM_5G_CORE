@@ -38,51 +38,69 @@ if __name__ == "__main__":
 
     build_images(basedir="./components/")
 
+    ipam_pool = docker.types.IPAMPool(subnet='192.168.80.0/24')
+    ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
+    oai_net = client.networks.create(
+        "mysql-net",
+        driver="bridge",
+        ipam=ipam_config,
+        options={
+            "com.docker.network.bridge.name": "mysql-net",
+        }
+    )
+
     info("*** Add controller\n")
     net.addController("c0")
 
     info("*** Adding switch\n")
-    # s1 = net.addSwitch("s1")
-    # s2 = net.addSwitch("s2")
+    s1 = net.addSwitch("s1")
+    s2 = net.addSwitch("s2")
     s3 = net.addSwitch("s3")
 
-    info("*** Adding mysql container\n")
-    mysql = net.addDockerHost(
-        "mysql",
-        dimage="networking2/mysql-net:8.0",
-        ip="192.168.70.131/24",
-        docker_args={
-            "volumes": {
-                prj_folder + "/database/oai_db.sql": {
-                    "bind": "/docker-entrypoint-initdb.d/oai_db.sql",
-                    "mode": "rw",
-                },
-                prj_folder + "/healthscripts/mysql-healthcheck2.sh": {
-                    "bind": "/tmp/mysql-healthcheck.sh",
-                    "mode": "rw",
-                },
-            },
-            "environment": {
-                "TZ": "Europe/Paris",
-                "MYSQL_DATABASE": "oai_db",
-                "MYSQL_USER": "test",
-                "MYSQL_PASSWORD": "test",
-                "MYSQL_ROOT_PASSWORD": "linux",
-            },
-            "healthcheck": {
-                "test": "/bin/bash -c \"/tmp/mysql-healthcheck.sh\"",
-                "interval": 10000000000,
-                "timeout": 5000000000,
-                "retries": 30,
-            },
-            # "ports": {
-            #     "3306/tcp": 3306,
-            # },
-        },
-    )
-    net.addLink(mysql, s3, bw=1000, delay="1ms", intfName1="mysql-s3", intfName2="s3-mysql", params1={'ip': '192.168.70.131/24'})
+    info("*** Adding links\n")
 
-    info("*** Adding NRF container\n")
+    s1s2_link = net.addLink(s1,  s2, bw=1000, delay="10ms", intfName1="s1-s2",  intfName2="s2-s1")
+    s2s3_link = net.addLink(s2,  s3, bw=1000, delay="50ms", intfName1="s2-s3",  intfName2="s3-s2")
+
+    info("\n*** Adding mysql container\n")
+    # mysql = net.addMysqlHost(
+    #     "mysql",
+    #     dimage="mysql:8.0",
+    #     docker_args={
+    #         "volumes": {
+    #             prj_folder + "/database/oai_db.sql": {
+    #                 "bind": "/docker-entrypoint-initdb.d/oai_db.sql",
+    #                 "mode": "rw",
+    #             },
+    #             prj_folder + "/healthscripts/mysql-healthcheck.sh": {
+    #                 "bind": "/tmp/mysql-healthcheck.sh",
+    #                 "mode": "rw",
+    #             },
+    #         },
+    #         "environment": {
+    #             "TZ": "Europe/Paris",
+    #             "MYSQL_DATABASE": "oai_db",
+    #             "MYSQL_USER": "test",
+    #             "MYSQL_PASSWORD": "test",
+    #             "MYSQL_ROOT_PASSWORD": "linux",
+    #         },
+    #         "healthcheck": {
+    #             "test": "/bin/bash -c \"/tmp/mysql-healthcheck.sh\"",
+    #             "interval": 10000000000,
+    #             "timeout": 5000000000,
+    #             "retries": 30,
+    #         },
+    #         # "ports": {
+    #         #     "3306/tcp": 3306,
+    #         #     "33060/tcp": 33060,
+    #         # },
+    #     },
+    # )
+    cmd = "/bin/bash -c 'docker run --privileged --name mysql -v " + prj_folder + '/database/oai_db.sql:/docker-entrypoint-initdb.d/oai_db.sql:rw -v ' + prj_folder + "/healthscripts/mysql-healthcheck.sh:/tmp/mysql-healthcheck.sh:rw -e TZ=Europe/Paris -e MYSQL_DATABASE=oai_db -e MYSQL_USER=test -e MYSQL_PASSWORD=test -e MYSQL_ROOT_PASSWORD=linux --health-cmd=\"/bin/bash -c /tmp/mysql-healthcheck.sh\" --health-interval=10s --health-timeout=5s --health-retries=30 -d mysql:8.0'"
+    os.system(cmd)
+    oai_net.connect("mysql", ipv4_address="192.168.80.131")
+
+    info("\n*** Adding NRF container\n")
     nrf = net.addDockerHost(
         "oai-nrf",
         dimage="networking2/oai-nrf:v1.5.1",
@@ -105,54 +123,55 @@ if __name__ == "__main__":
     time.sleep(1)
     client.containers.get("oai-nrf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
-    # info("*** Adding NSSF container\n")
-    # nssf = net.addDockerHost(
-    #     "oai-nssf",
-    #     dimage="networking2/oai-nssf:v1.5.1",
-    #     ip="192.168.70.132/24",
-    #     docker_args={
-    #         # "privileged": True,
-    #         "volumes": {
-    #             prj_folder + "/nssf_slice_config.yaml": {
-    #                 "bind": "/openair-nssf/etc/nssf_slice_config.yaml",
-    #                 "mode": "rw",
-    #             },
-    #         },
-    #         "environment": {
-    #             "TZ": "Europe/Paris",
-    #             "NSSF_NAME": "oai-nssf",
-    #             "NSSF_FQDN": "nssf.oai-5gcn.eur",
-    #             "SBI_IF_NAME": "nssf-s3",
-    #             "SBI_PORT_HTTP2": "8080",
-    #             "SBI_API_VERSION": "v1",
-    #             # NSSF is not registered to NRF
-    #             "NSSF_SLICE_CONFIG": "/openair-nssf/etc/nssf_slice_config.yaml",
-    #         },
-    #         "cap_add": ["NET_ADMIN", "SYS_ADMIN"],
-    #         "cap_drop": ["ALL"],
-    #         # "ports": {
-    #         #     "80/tcp": 80,
-    #         #     "8080/tcp": 8080,
-    #         # },
-    #     },
-    # )
+    info("\n*** Adding NSSF container\n")
+    nssf = net.addDockerHost(
+        "oai-nssf",
+        dimage="networking2/oai-nssf:v1.5.1",
+        docker_args={
+            # "privileged": True,
+            "volumes": {
+                prj_folder + "/nssf_slice_config.yaml": {
+                    "bind": "/openair-nssf/etc/nssf_slice_config.yaml",
+                    "mode": "rw",
+                },
+            },
+            "environment": {
+                "TZ": "Europe/Paris",
+                "NSSF_NAME": "oai-nssf",
+                "NSSF_FQDN": "nssf.oai-5gcn.eur",
+                "SBI_IF_NAME": "nssf-s3",
+                "SBI_PORT_HTTP2": "8080",
+                "SBI_API_VERSION": "v1",
+                # NSSF is not registered to NRF
+                "NSSF_SLICE_CONFIG": "/openair-nssf/etc/nssf_slice_config.yaml",
+            },
+            "cap_add": ["NET_ADMIN", "SYS_ADMIN"],
+            "cap_drop": ["ALL"],
+            # "ports": {
+            #     "80/tcp": 80,
+            #     "8080/tcp": 8080,
+            # },
+        },
+    )
+    net.addLink(nssf, s3, bw=1000, delay="1ms", intfName1="nssf-s3", intfName2="s3-nssf", params1={'ip': '192.168.70.132/24'})
+    time.sleep(1)
+    client.containers.get("oai-nssf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
-    info("*** Adding UDR container\n")
+    info("\n*** Adding UDR container\n")
     udr = net.addDockerHost(
         "oai-udr",
         dimage="networking2/oai-udr:v1.5.1",
-        ip="192.168.70.133/24",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
                 "UDR_NAME": "oai-udr",
                 "UDR_INTERFACE_NAME_FOR_NUDR": "udr-s3",
-                "MYSQL_IPV4_ADDRESS": "192.168.70.131",
+                "MYSQL_IPV4_ADDRESS": "192.168.80.131",
                 "MYSQL_USER": "test",
                 "MYSQL_PASS": "test",
                 "MYSQL_DB": "oai_db",
                 "WAIT_MYSQL": "120",
-                "USE_FQDN_DNS": "yes",
+                "USE_FQDN_DNS": "no",
                 "REGISTER_NRF": "yes",
                 "NRF_IPV4_ADDRESS": "192.168.70.136",
                 "NRF_FQDN": "oai-nrf",
@@ -168,13 +187,13 @@ if __name__ == "__main__":
     )
     net.addLink(udr, s3, bw=1000, delay="1ms", intfName1="udr-s3", intfName2="s3-udr", params1={'ip': '192.168.70.133/24'})
     time.sleep(1)
-    client.containers.get("oai-udr").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
+    client.containers.get("oai-udr").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o > /log.txt\"", detach=True)
+    oai_net.connect("oai-udr", ipv4_address="192.168.80.132")
 
-    info("*** Adding UDM container\n")
+    info("\n*** Adding UDM container\n")
     udm = net.addDockerHost(
         "oai-udm",
         dimage="networking2/oai-udm:v1.5.1",
-        ip="192.168.70.134/24",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -202,11 +221,10 @@ if __name__ == "__main__":
     time.sleep(1)
     client.containers.get("oai-udm").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
-    info("*** Adding AUSF container\n")
+    info("\n*** Adding AUSF container\n")
     ausf = net.addDockerHost(
         "oai-ausf",
         dimage="networking2/oai-ausf:v1.5.1",
-        ip="192.168.70.135/24",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -234,11 +252,10 @@ if __name__ == "__main__":
     time.sleep(1)
     client.containers.get("oai-ausf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
     
-    info("*** Adding AMF container\n")
+    info("\n*** Adding AMF container\n")
     amf = net.addDockerHost(
         "oai-amf",
         dimage="networking2/oai-amf:v1.5.1",
-        ip="192.168.70.138/24",
         docker_args={
             "environment": {
                 "TZ":"Europe/Paris",
@@ -289,11 +306,10 @@ if __name__ == "__main__":
     time.sleep(1)
     client.containers.get("oai-amf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
-    info("*** Adding SMF container\n")
+    info("\n*** Adding SMF container\n")
     smf = net.addDockerHost(
         "oai-smf",
         dimage="networking2/oai-smf:v1.5.1",
-        ip="192.168.70.139/24",
         docker_args={
             "environment": {
                 "TZ": "Europe/Paris",
@@ -343,7 +359,7 @@ if __name__ == "__main__":
     time.sleep(1)
     client.containers.get("oai-smf").exec_run("/bin/bash -c \"/openair-${CONTAINER_NAME}/bin/oai_${CONTAINER_NAME} -c /openair-${CONTAINER_NAME}/etc/${CONTAINER_NAME}.conf -o\"", detach=True)
 
-    # info("*** Adding SPGWU-UPF container\n")
+    # info("\n*** Adding SPGWU-UPF container\n")
     # spgwu = net.addDockerHost(
     #     "oai-spgwu",
     #     dimage="networking2/oai-spgwu-tiny:v1.5.1",
@@ -377,31 +393,28 @@ if __name__ == "__main__":
     #         #     "8805/udp": 8805,
     #         # },
     #     },
-    #     network="oai-public-net",
-    #     ip="192.168.70.142"
     # )
 
-    # info("*** Adding EXT-DN container\n")
-    # ext_dn = net.addDockerHost(
-    #     "oai-ext-dn",
-    #     dimage="oaisoftwarealliance/trf-gen-cn5g:latest",
-    #     docker_args={
-    #         # "privileged": True,
-    #         # "init": True,
-    #         # "entrypoint": "/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"",
-    #         "command": ["/bin/bash", "-c", "trap : SIGTERM SIGINT; sleep infinity & wait"],
-    #         "healthcheck": {
-    #             "test": "/bin/bash -c \"iptables -L -t nat | grep MASQUERADE\"",
-    #             "interval": 10000000000,
-    #             "timeout": 5000000000,
-    #             "retries": 10,
-    #         },
-    #     },
-    #     network="oai-public-net",
-    #     ip="192.168.70.145"
-    # )
+    info("\n*** Adding EXT-DN container\n")
+    ext_dn = net.addDockerHost(
+        "oai-ext-dn",
+        dimage="oaisoftwarealliance/trf-gen-cn5g:latest",
+        docker_args={
+            # "privileged": True,
+            # "init": True,
+            # "entrypoint": "/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"",
+            "command": ["/bin/bash", "-c", "trap : SIGTERM SIGINT; sleep infinity & wait"],
+            "healthcheck": {
+                "test": "/bin/bash -c \"iptables -L -t nat | grep MASQUERADE\"",
+                "interval": 10000000000,
+                "timeout": 5000000000,
+                "retries": 10,
+            },
+        },
+    )
+    net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.70.145/24'})
 
-    # info("*** Adding gNB\n")
+    # info("\n*** Adding gNB\n")
     # gnb = net.addDockerHost(
     #     "gnb", 
     #     dimage="networking2/ueransim:3.2.6",
@@ -430,11 +443,9 @@ if __name__ == "__main__":
     #             },
     #         },
     #     },
-    #     network="oai-public-net",
-    #     ip="192.168.70.152"
     # )
 
-    # info("*** Adding UE\n")
+    # info("\n*** Adding UE\n")
     # ue = net.addDockerHost(
     #     "ue", 
     #     dimage="networking2/ueransim:3.2.6",
@@ -460,18 +471,11 @@ if __name__ == "__main__":
     #             "/dev": {"bind": "/dev", "mode": "rw"},
     #         },
     #     },
-    #     network="oai-public-net",
-    #     ip="192.168.70.153"
     # )
-
-    info("*** Adding links\n")
-    # s1s2_link = net.addLink(s1,  s2, bw=1000, delay="10ms", intfName1="s1-s2",  intfName2="s2-s1")
-    # s2s3_link = net.addLink(s2,  s3, bw=1000, delay="50ms", intfName1="s2-s3",  intfName2="s3-s2")
     
     # net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
-    # net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.70.145/24'})
     
-    # client.containers.get("oai-ext-dn").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"")
+    client.containers.get("oai-ext-dn").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"")
     # # ??? ^^^ 12.2.1.0/24
     
     # net.addLink(ue,  s1, bw=1000, delay="1ms", intfName1="ue-s1",  intfName2="s1-ue", params1={'ip': '192.168.70.153/24'})
@@ -482,9 +486,16 @@ if __name__ == "__main__":
 
     if not AUTOTEST_MODE:
         CLI(net)
+    
+    oai_net.disconnect("mysql")
+    oai_net.disconnect("oai-udr")
 
-    # net.delLink(s1s2_link)
-    # net.delLink(s2s3_link)
+    net.delLink(s1s2_link)
+    net.delLink(s2s3_link)
 
     net.stop()
+
+    oai_net.remove()
     
+    os.system("/bin/bash -c \"docker kill mysql\"")
+    os.system("/bin/bash -c \"docker rm mysql\"")
