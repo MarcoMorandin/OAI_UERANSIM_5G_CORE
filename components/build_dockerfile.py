@@ -18,14 +18,16 @@ def build_images(basedir = "./"):
                     "oai-upf-vpp:v1.5.1",
                     "ueransim:3.2.6"]
 
-    components = [  "oai-nssf:v1.5.1",
+    components = [  
+                    "oai-nssf:v1.5.1",
                     "oai-udr:v1.5.1",
                     "oai-udm:v1.5.1",
                     "oai-ausf:v1.5.1",
                     "oai-nrf:v1.5.1",
                     "oai-amf:v1.5.1",
                     "oai-smf:v1.5.1",
-                    "oai-spgwu-tiny:v1.5.1"]
+                    "oai-spgwu-tiny:v1.5.1"
+                ]
 
     components = [(base_tag + component) for component in components]
 
@@ -38,10 +40,10 @@ def build_images(basedir = "./"):
     if len(components):
         print("********* Some required images are missed *********")
         print("********* Now downloading and rebuilding all required images *********")
-        login = subprocess.check_output("docker system info | grep -E 'Username|Registry'", shell=True).decode("utf-8")
-        if "Username" not in login:
-            print("********* In order to download all docker images you must login to DockerHub *********")
-            os.system("/bin/bash -c \"docker login\"")
+        # login = subprocess.check_output("docker system info | grep -E 'Username|Registry'", shell=True).decode("utf-8")
+        # if "Username" not in login:
+        #     print("********* In order to download all docker images you must login to DockerHub *********")
+        #     os.system("/bin/bash -c \"docker login\"")
         for component in components:
             name = component.replace(base_tag + "oai-", "")
             name = name.replace(":v1.5.1", "")
