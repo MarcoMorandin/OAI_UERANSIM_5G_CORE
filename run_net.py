@@ -12,6 +12,7 @@ from components.remove_containers import *
 
 import json, time
 
+#TODO Aggiungere script per buildare dev
 #TODO Aggiungere script per pullare tutte le immagini
 #TODO Aggiungere script per controllare tipo di architettura usata, nel caso arm fa partire: docker run --rm --privileged aptman/qus -s -- -p x86_64
 
@@ -40,7 +41,7 @@ mysql = net.addDockerHost(
     dimage="dev_test",
     ip="192.168.70.131",
     docker_args={
-        "hostname" : "mysql"
+        "hostname" : "mysql",
     }
 )
 net.addLink(mysql, s3, bw=1000, delay="1ms", intfName1="mysql-s3", intfName2="s3-mysql", params1={'ip': '192.168.70.131/24'})
