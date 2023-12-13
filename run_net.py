@@ -12,6 +12,7 @@ from components.remove_containers import *
 
 import json, time
 
+#TODO Aggiungere script per buildare dev
 #TODO Aggiungere script per pullare tutte le immagini
 #TODO Aggiungere script per controllare tipo di architettura usata, nel caso arm fa partire: docker run --rm --privileged aptman/qus -s -- -p x86_64
 
@@ -40,7 +41,7 @@ mysql = net.addDockerHost(
     dimage="dev_test",
     ip="192.168.70.131",
     docker_args={
-        "hostname" : "mysql"
+        "hostname" : "mysql",
     }
 )
 net.addLink(mysql, s3, bw=1000, delay="1ms", intfName1="mysql-s3", intfName2="s3-mysql", params1={'ip': '192.168.70.131/24'})
@@ -214,7 +215,7 @@ udr_srv = mgr.addContainer(
             "TZ": "Europe/Paris",
             "UDR_NAME": "oai-udr",
             "UDR_INTERFACE_NAME_FOR_NUDR": "udr-s3",
-            "MYSQL_IPV4_ADDRESS": "192.168.80.131",
+            "MYSQL_IPV4_ADDRESS": "192.168.70.131",
             "MYSQL_USER": "test",
             "MYSQL_PASS": "test",
             "MYSQL_DB": "oai_db",
@@ -387,9 +388,9 @@ ext_dn_srv = mgr.addContainer(
             "timeout": 5000000000,
             "retries": 10,
         },
+        "privileged": True,
     }
 )
-#client.containers.get("ext_dn_srv").exec_run("/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.0/24 via 192.168.70.142 dev ext_dn-s3;\"")
 
 if not AUTOTEST_MODE:
     CLI(net)
