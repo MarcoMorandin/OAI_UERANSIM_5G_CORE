@@ -21,6 +21,7 @@ def get_images():
         "oaisoftwarealliance/trf-gen-cn5g:latest",
         "rohankharade/ueransim:latest",
         "mysql:8.0",
+        "marcomorandin/trf-gen-cn5g:v1.5.1"
     ]
 
     client = docker.from_env()

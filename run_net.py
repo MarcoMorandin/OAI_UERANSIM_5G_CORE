@@ -17,6 +17,7 @@ import json, time
 #TODO Aggiungere script per controllare tipo di architettura usata, nel caso arm fa partire: docker run --rm --privileged aptman/qus -s -- -p x86_64
 #TODO SPGWU non funziona
 #TODO catturare eccezzione ctrl+c per interrompere correttamente
+#TODO get_images() docker login
 
 AUTOTEST_MODE = os.environ.get("COMNETSEMU_AUTOTEST_MODE", 0)
 
@@ -54,8 +55,7 @@ def stop_network():
 remove_containers()
 
 try:
-    # error of credentials to fix
-    # get_images()
+    get_images()
     pass
 except Exception as error:
     info("Error downloading, now exiting. Maybe \"docker login\" is needed\n")
@@ -498,7 +498,7 @@ info("*** Adding EXT-DN container\n")
 ext_dn_srv = mgr.addContainer(
     name = "ext_dn_srv",
     dhost = "ext_dn",
-    dimage = "oaisoftwarealliance/trf-gen-cn5g:latest",
+    dimage = "marcomorandin/trf-gen-cn5g:v1.5.1",
     dcmd = "",
     docker_args={
         "entrypoint": "/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.2/32 via 192.168.73.201 dev ext_dn-s3; ip route; sleep infinity\"",
