@@ -16,6 +16,7 @@ import json, time
 #TODO Modificare script per pullare tutte le immagini e rimuovere i container anche usciti e le reti
 #TODO Aggiungere script per controllare tipo di architettura usata, nel caso arm fa partire: docker run --rm --privileged aptman/qus -s -- -p x86_64
 #TODO SPGWU non funziona
+#TODO catturare eccezzione ctrl+c per interrompere correttamente
 
 AUTOTEST_MODE = os.environ.get("COMNETSEMU_AUTOTEST_MODE", 0)
 
@@ -39,8 +40,10 @@ def stop_network():
     mgr.removeContainer("ausf_srv")
     mgr.removeContainer("amf_srv")
     mgr.removeContainer("smf_srv")
-    mgr.removeContainer("spgwu_srv")
+    mgr.removeContainer("upf_srv")
     mgr.removeContainer("ext_dn_srv")
+    mgr.removeContainer("ueransim_srv")
+
 
     net.delLink(s1s2_link)
     net.delLink(s2s3_link)
@@ -148,16 +151,17 @@ smf = net.addDockerHost(
 )
 net.addLink(smf, s3, bw=1000, delay="1ms", intfName1="smf-s3", intfName2="s3-smf", params1={'ip': '192.168.70.139/24'})
 
-spgwu = net.addDockerHost(
-    "spgwu",
+upf = net.addDockerHost(
+    "upf",
     dimage="dev_test",
-    ip="192.168.70.142/24",
     docker_args={
-        "hostname" : "spgwu",
+        "hostname" : "upf",
     },
 )
-#net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
-net.addLink(spgwu, s2, bw=1000, delay="1ms")
+net.addLink(upf, s2, bw=1000, delay="1ms")
+net.addLink(upf, s2, bw=1000, delay="1ms", intfName1="upf-s2-2", intfName2="s2-upf-2", params1={'ip': '192.168.72.201/24'})
+net.addLink(upf, s2, bw=1000, delay="1ms", intfName1="upf-s2-3", intfName2="s2-upf-3", params1={'ip': '192.168.73.201/24'})
+# net.addLink(spgwu, s2, bw=1000, delay="1ms")
 
 ext_dn = net.addDockerHost(
     "ext_dn",
@@ -166,7 +170,16 @@ ext_dn = net.addDockerHost(
         "hostname" : "ext_dn",
     },
 )
-net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.70.145/24'})
+net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.73.145/24'})
+
+ueransim = net.addDockerHost(
+    "ueransim",
+    dimage="dev_test",
+    docker_args={
+        "hostname" : "ueransim",
+    },
+)
+net.addLink(ueransim, s3, bw=1000, delay="50ms", intfName1="ueransim-s3", intfName2="s3-ueransim", params1={'ip': '192.168.70.152/24'})
 
 net.start()
 
@@ -407,13 +420,13 @@ smf_srv = mgr.addContainer(
             "DEFAULT_DNS_IPV4_ADDRESS": "172.17.0.1",
             "DEFAULT_DNS_SEC_IPV4_ADDRESS": "8.8.8.8",
             "AMF_IPV4_ADDRESS": "192.168.70.138",
-            "AMF_FQDN": "oai-amf",
+            "AMF_FQDN": "amf_srv",
             # "UDM_IPV4_ADDRESS": "192.168.70.134",
             # "UDM_FQDN": "oai-udm",
-            "UPF_IPV4_ADDRESS": "192.168.70.142",
-            "UPF_FQDN_0": "oai-spgwu",
+            "UPF_IPV4_ADDRESS": "192.168.70.201",
+            "UPF_FQDN_0": "upf_srv",
             "NRF_IPV4_ADDRESS": "192.168.70.136",
-            "NRF_FQDN": "oai-nrf",
+            "NRF_FQDN": "nrf_srv",
             "USE_LOCAL_SUBSCRIPTION_INFO": "yes",
             "REGISTER_NRF": "yes",
             "DISCOVER_UPF": "yes",
@@ -439,37 +452,40 @@ smf_srv = mgr.addContainer(
     }
 )
 
-info("*** Adding SPGWU-UPF container\n")
-spgwu_srv = mgr.addContainer(
-    name="spgwu_srv",
-    dhost = "spgwu",
-    dimage="oaisoftwarealliance/oai-spgwu-tiny:v1.5.1",
+info("*** Adding UPF container\n")
+upf_srv = mgr.addContainer(
+    name="upf_srv",
+    dhost = "upf",
+    dimage="oaisoftwarealliance/oai-upf-vpp:v1.5.1",
     dcmd = "",
     docker_args={
         "environment": {
-            "TZ": "Europe/Paris",
-            # "SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP": "spgwu-s2",
-            # "SGW_INTERFACE_NAME_FOR_SX": "spgwu-s2",
-            # "PGW_INTERFACE_NAME_FOR_SGI": "spgwu-s2",
-            "SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP": "eth0",
-            "SGW_INTERFACE_NAME_FOR_SX": "eth0",
-            "PGW_INTERFACE_NAME_FOR_SGI": "eth0",
-            "NETWORK_UE_NAT_OPTION": "yes",
-            "NETWORK_UE_IP": "12.2.1.2/32",
-            "ENABLE_5G_FEATURES": "yes",
+            "IF_1_IP": "192.168.70.201",
+            "IF_1_TYPE": "N4",
+            "IF_1_IP_REMOTE": "192.168.70.139", # SMF IP Address
+            "IF_2_IP": "192.168.72.201",
+            "IF_2_TYPE": "N3",
+            "IF_2_NWI": "access.oai.org",
+            "IF_3_IP": "192.168.73.201",
+            "IF_3_TYPE": "N6",
+            "IF_3_IP_REMOTE": "192.168.73.145", # EXT-DN IP Address
+            "IF_3_NWI": "internet.oai.org",
+            "NAME": "VPP-UPF",
+            "MNC": "95",
+            "MCC": "208",
+            "REALM": "3gppnetwork.org",
+            "VPP_MAIN_CORE": "0",
+            "VPP_CORE_WORKER": "1",
+#           VPP_PLUGIN_PATH=/usr/lib64/vpp_plugins/                # RHEL7
+            "VPP_PLUGIN_PATH": "/usr/lib/x86_64-linux-gnu/vpp_plugins/", # Ubntu18.04
+            "SNSSAI_SD": "123",
+            "SNSSAI_SST": "222",
+            "DNN": "default",
             "REGISTER_NRF": "yes",
-            "USE_FQDN_NRF": "no",
-            "UPF_FQDN_5G": "oai-spgwu",
-            "NRF_IPV4_ADDRESS": "192.168.70.136",
-            "NRF_API_VERSION": "v1",
-            "NRF_FQDN": "oai-nrf",
-            # Mandatory to set the NRF PORT to 8080 (it is set to default to 80 otherwise)
-            "HTTP_VERSION": "2",
+            "NRF_IP_ADDR": "192.168.70.136",
+            #changes for HTTP2
             "NRF_PORT": "8080",
-            # One single slice / DNN is defined
-            "NSSAI_SST_0": "128",
-            "NSSAI_SD_0": "128",
-            "DNN_0": "default",
+            "HTTP_VERSION": "2",
         },
         "privileged": True,
         "cap_add": ["NET_ADMIN", "SYS_ADMIN"],
@@ -484,7 +500,7 @@ ext_dn_srv = mgr.addContainer(
     dimage = "oaisoftwarealliance/trf-gen-cn5g:latest",
     dcmd = "",
     docker_args={
-        "entrypoint": "/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.2/32 via 192.168.70.142 dev ext_dn-s3; ip route; sleep infinity\"",
+        "entrypoint": "/bin/bash -c \"iptables -t nat -A POSTROUTING -o ext_dn-s3 -j MASQUERADE; ip route add 12.2.1.2/32 via 192.168.73.201 dev ext_dn-s3; ip route; sleep infinity\"",
         "command": ["/bin/bash", "-c", "trap : SIGTERM SIGINT; sleep infinity & wait"],
         "healthcheck": {
             "test": "/bin/bash -c \"iptables -L -t nat | grep MASQUERADE\"",
@@ -496,6 +512,72 @@ ext_dn_srv = mgr.addContainer(
     }
 )
 
+info("*** Adding gNB\n")
+ueransim_srv = mgr.addContainer(
+    name = "ueransim_srv", 
+    dimage="rohankharade/ueransim:latest",
+    dhost = "ueransim",
+    dcmd="",
+    docker_args={
+        "environment": {
+            # GNB Congig Parameters
+            "MCC":"208",
+            "MNC":"95",
+            "NCI":"0x000000010",
+            "TAC":"0xa000",
+            "LINK_IP":"192.168.70.152",
+            "NGAP_IP":"192.168.70.152",
+            "GTP_IP":"192.168.70.152",
+            "NGAP_PEER_IP":"192.168.70.135", # AUSF IP Address
+            "SST":"128",
+            "SD":"128",
+            "SST_0":"128",
+            "SD_0":"128",
+            "SST_1":"1",
+            "SD_1":"0",
+            "SST_2":"131",
+            "SD_2":"131",
+            "IGNORE_STREAM_IDS":"true",
+            # UE Config Parameters
+            "NUMBER_OF_UE":"2",
+            "IMSI":"208950000000035",
+            "KEY":"0C0A34601D4F07677303652C0462535B",
+            "OP":"63bfa50ee6523365ff14c1f45f88737d",
+            "OP_TYPE":"OPC",
+            "AMF_VALUE":"8000",
+            "IMEI":"356938035643803",
+            "IMEI_SV":"0035609204079514",
+            "GNB_IP_ADDRESS":"192.168.70.152",
+            "PDU_TYPE":"IPv4",
+            "APN":"default",
+            "SST_R":"128", #Requested N-SSAI
+            "SD_R":"128",
+            "SST_C":"128",
+            "SD_C":"128",
+            "SST_D":"128",
+            "SD_D":"128",
+        },
+        "volumes": {
+            prj_folder + "/conf/custom-gnb.yaml": {
+                "bind": "/ueransim/etc/custom-gnb.yaml",
+                "mode": "rw",
+            },
+            prj_folder + "/conf/custom-ue.yaml": {
+                "bind": "/ueransim/etc/custom-ue.yaml",
+                "mode": "rw",
+            },
+        },
+        "healthcheck": {
+            "test": "/bin/bash -c \"ifconfig uesimtun0\"",
+            "interval": 10000000000,
+            "timeout": 5000000000,
+            "retries": 10,
+        },
+    },
+)
+
+
+
 elapsed = 0
 info("Waiting for all services to be up and healthy")
 while ( client.containers.get("nrf_srv").attrs["State"]["Health"]["Status"] != "healthy" or
@@ -504,9 +586,9 @@ while ( client.containers.get("nrf_srv").attrs["State"]["Health"]["Status"] != "
         client.containers.get("udm_srv").attrs["State"]["Health"]["Status"] != "healthy" or
         client.containers.get("ausf_srv").attrs["State"]["Health"]["Status"] != "healthy" or
         client.containers.get("amf_srv").attrs["State"]["Health"]["Status"] != "healthy" or
-        client.containers.get("smf_srv").attrs["State"]["Health"]["Status"] != "healthy" or
-        client.containers.get("spgwu_srv").attrs["State"]["Health"]["Status"] != "healthy" or
-        client.containers.get("ext_dn_srv").attrs["State"]["Health"]["Status"] != "healthy" ):
+        client.containers.get("smf_srv").attrs["State"]["Health"]["Status"] != "healthy" 
+        # or client.containers.get("ext_dn_srv").attrs["State"]["Health"]["Status"] != "healthy" 
+        ):
     time.sleep(0.5)
     info(".")
     elapsed += 1
