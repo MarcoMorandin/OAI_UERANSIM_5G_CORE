@@ -5,7 +5,8 @@ def remove_containers():
     client = docker.from_env()
     containers = client.containers
     for container in containers.list():
-        if("networking2" in str(container.image) or "oaisoftwarealliance" in str(container.image)):
+        # remove also exited and networks...
+        if("dev_test" in str(container.image) or "mysql" in str(container.image) or "oaisoftwarealliance" in str(container.image)):
             container.remove(force = True)
 
-    print("****** All networking2 containers are killed ******")
+    print("****** All project containers have been killed ******")

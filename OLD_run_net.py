@@ -19,7 +19,7 @@ from comnetsemu.net import Containernet, VNFManager
 from mininet.link import TCLink, Intf
 from mininet.log import info, setLogLevel
 from mininet.node import Controller
-from components.build_dockerfile import *
+from OAI_UERANSIM_5G_CORE.components.get_images import *
 from components.remove_containers import *
 
 import json, time
