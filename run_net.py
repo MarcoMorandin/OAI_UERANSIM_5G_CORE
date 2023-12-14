@@ -223,12 +223,13 @@ while client.containers.get("mysql_srv").attrs["State"]["Health"]["Status"] != "
     info(".")
     elapsed += 1
     if elapsed >= wait_timeout:
+        info("\n")
         mgr.removeContainer("mysql_srv")
         net.delLink(s1s2_link)
         net.delLink(s2s3_link)
         net.stop()
         mgr.stop()
-        info("\nError timeout reached. Exiting")
+        info("Error timeout reached. Exiting\n")
         exit()
 info("\n")
 
