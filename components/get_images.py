@@ -15,13 +15,13 @@ def get_images():
         "oaisoftwarealliance/oai-nrf:v1.5.1",
         "oaisoftwarealliance/oai-amf:v1.5.1",
         "oaisoftwarealliance/oai-smf:v1.5.1",
-        "oaisoftwarealliance/oai-pcf:v1.5.1",
-        "oaisoftwarealliance/oai-spgwu-tiny:v1.5.1",
+        # "oaisoftwarealliance/oai-pcf:v1.5.1",
+        # "oaisoftwarealliance/oai-spgwu-tiny:v1.5.1",
         "oaisoftwarealliance/oai-upf-vpp:v1.5.1",
-        "oaisoftwarealliance/trf-gen-cn5g:latest",
         "rohankharade/ueransim:latest",
         "mysql:8.0",
-        "marcomorandin/trf-gen-cn5g:v1.5.1"
+        "marcomorandin/trf-gen-cn5g:v1.5.1",
+        "marcomorandin/dev_test:latest",
     ]
 
     client = docker.from_env()
@@ -31,12 +31,12 @@ def get_images():
     components = list(set(components).difference(images))
 
     if len(components):
-        print("********* Some required images are missing, now downloading *********")
+        info("***Some required images are missing, now downloading\n")
         for component in components:
             output = subprocess.check_output(f"docker pull {component}", shell=True).decode("utf-8")
             info(output)
             if "Error response" in output:
                 raise Exception(f"ERROR downloading {component}, now exiting. Maybe \"docker login\" is needed")
-            print(f"********* FINISHED downloading of {component} *********")    
+            info(f"*** FINISHED downloading of {component}\n")    
     else:
-        print("********* All Docker Images are already present *********")
+        info("*** All Docker Images are already present\n")

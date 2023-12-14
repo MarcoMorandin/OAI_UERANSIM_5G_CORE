@@ -1,6 +1,9 @@
 import os, sys
 import docker
 
+from mininet.log import info, setLogLevel
+
+
 def remove_containers():
     client = docker.from_env()
     containers = client.containers
@@ -9,4 +12,4 @@ def remove_containers():
         if("dev_test" in str(container.image) or "mysql" in str(container.image) or "oaisoftwarealliance" in str(container.image)):
             container.remove(force = True)
 
-    print("****** All project containers have been killed ******")
+    info("*** All project containers have been killed\n")
