@@ -151,13 +151,11 @@ net.addLink(smf, s3, bw=1000, delay="1ms", intfName1="smf-s3", intfName2="s3-smf
 spgwu = net.addDockerHost(
     "spgwu",
     dimage="dev_test",
-    ip="192.168.70.142/24",
     docker_args={
         "hostname" : "spgwu",
     },
 )
-#net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
-net.addLink(spgwu, s2, bw=1000, delay="1ms")
+net.addLink(spgwu, s2, bw=1000, delay="1ms", intfName1="spgwu-s2", intfName2="s2-spgwu", params1={'ip': '192.168.70.142/24'})
 
 ext_dn = net.addDockerHost(
     "ext_dn",
@@ -210,12 +208,13 @@ while client.containers.get("mysql_srv").attrs["State"]["Health"]["Status"] != "
     info(".")
     elapsed += 1
     if elapsed >= wait_timeout:
+        info("\n")
         mgr.removeContainer("mysql_srv")
         net.delLink(s1s2_link)
         net.delLink(s2s3_link)
         net.stop()
         mgr.stop()
-        info("\nError timeout reached. Exiting")
+        info("Error timeout reached. Exiting\n")
         exit()
 info("\n")
 
@@ -448,12 +447,9 @@ spgwu_srv = mgr.addContainer(
     docker_args={
         "environment": {
             "TZ": "Europe/Paris",
-            # "SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP": "spgwu-s2",
-            # "SGW_INTERFACE_NAME_FOR_SX": "spgwu-s2",
-            # "PGW_INTERFACE_NAME_FOR_SGI": "spgwu-s2",
-            "SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP": "eth0",
-            "SGW_INTERFACE_NAME_FOR_SX": "eth0",
-            "PGW_INTERFACE_NAME_FOR_SGI": "eth0",
+            "SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP": "spgwu-s2",
+            "SGW_INTERFACE_NAME_FOR_SX": "spgwu-s2",
+            "PGW_INTERFACE_NAME_FOR_SGI": "spgwu-s2",
             "NETWORK_UE_NAT_OPTION": "yes",
             "NETWORK_UE_IP": "12.2.1.2/32",
             "ENABLE_5G_FEATURES": "yes",

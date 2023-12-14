@@ -18,6 +18,7 @@ def get_images():
         "oaisoftwarealliance/oai-pcf:v1.5.1",
         "oaisoftwarealliance/oai-spgwu-tiny:v1.5.1",
         "oaisoftwarealliance/oai-upf-vpp:v1.5.1",
+        "oaisoftwarealliance/trf-gen-cn5g:latest",
         "rohankharade/ueransim:latest",
         "mysql:8.0",
     ]
