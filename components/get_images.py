@@ -22,6 +22,8 @@ def get_images():
         "mysql:8.0",
         "marcomorandin/trf-gen-cn5g:v1.5.1",
         "marcomorandin/dev_test:latest",
+        "oaisoftwarealliance/oai-nr-ue:develop",
+        "oaisoftwarealliance/oai-gnb:develop",
     ]
 
     client = docker.from_env()

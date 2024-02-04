@@ -179,14 +179,23 @@ try:
     )
     net.addLink(ext_dn, s3, bw=1000, delay="50ms", intfName1="ext_dn-s3", intfName2="s3-ext_dn", params1={'ip': '192.168.73.145/24'})
 
-    ueransim = net.addDockerHost(
-        "ueransim",
+    gnb = net.addDockerHost(
+        "gnb",
         dimage="marcomorandin/dev_test",
         docker_args={
-            "hostname" : "ueransim",
+            "hostname" : "gnb",
         },
     )
-    net.addLink(ueransim, s3, bw=1000, delay="50ms", intfName1="ueransim-s3", intfName2="s3-ueransim", params1={'ip': '192.168.70.152/24'})
+    net.addLink(gnb, s3, bw=1000, delay="50ms", intfName1="gnb-s3", intfName2="s3-gnb", params1={'ip': '192.168.70.152/24'})
+
+    ue = net.addDockerHost(
+        "ue",
+        dimage="marcomorandin/dev_test",
+        docker_args={
+            "hostname" : "ue",
+        },
+    )
+    net.addLink(ue, s3, bw=1000, delay="50ms", intfName1="ue-s3", intfName2="s3-ue", params1={'ip': '192.168.70.153/24'})
 
     net.start()
 
@@ -521,62 +530,51 @@ try:
     )
 
     info("*** Adding gNB\n")
-    ueransim_srv = mgr.addContainer(
-        name = "ueransim_srv", 
-        dimage="rohankharade/ueransim:latest",
-        dhost = "ueransim",
+    gnb_srv = mgr.addContainer(
+        name = "gnb_srv", 
+        dimage="oaisoftwarealliance/oai-gnb:develop",
+        dhost = "gnb",
         dcmd="",
         docker_args={
+            "privileged": True,
             "environment": {
-                # GNB Congig Parameters
-                "MCC":"208",
-                "MNC":"95",
-                "NCI":"0x000000010",
-                "TAC":"0xa000",
-                "LINK_IP":"192.168.70.152",
-                "NGAP_IP":"192.168.70.152",
-                "GTP_IP":"192.168.70.152",
-                "NGAP_PEER_IP":"192.168.70.135", # AUSF IP Address
-                "SST":"128",
-                "SD":"128",
-                "SST_0":"128",
-                "SD_0":"128",
-                "SST_1":"1",
-                "SD_1":"0",
-                "SST_2":"131",
-                "SD_2":"131",
-                "IGNORE_STREAM_IDS":"true",
-                # UE Config Parameters
-                "NUMBER_OF_UE":"2",
-                "IMSI":"208950000000035",
-                "KEY":"0C0A34601D4F07677303652C0462535B",
-                "OP":"63bfa50ee6523365ff14c1f45f88737d",
-                "OP_TYPE":"OPC",
-                "AMF_VALUE":"8000",
-                "IMEI":"356938035643803",
-                "IMEI_SV":"0035609204079514",
-                "GNB_IP_ADDRESS":"192.168.70.152",
-                "PDU_TYPE":"IPv4",
-                "APN":"default",
-                "SST_R":"128", #Requested N-SSAI
-                "SD_R":"128",
-                "SST_C":"128",
-                "SD_C":"128",
-                "SST_D":"128",
-                "SD_D":"128",
+                "USE_ADDITIONAL_OPTIONS": "--sa -E --rfsim --log_config.global_log_options level,nocolor,time",
+                "ASAN_OPTIONS": "detect_leaks=0",
             },
             "volumes": {
-                prj_folder + "/conf/custom-gnb.yaml": {
-                    "bind": "/ueransim/etc/custom-gnb.yaml",
-                    "mode": "rw",
-                },
-                prj_folder + "/conf/custom-ue.yaml": {
-                    "bind": "/ueransim/etc/custom-ue.yaml",
+                prj_folder + "/ran/gnb-du.sa.band78.106prb.rfsim.conf": {
+                    "bind": "/opt/oai-gnb/etc/gnb.conf",
                     "mode": "rw",
                 },
             },
             "healthcheck": {
-                "test": "/bin/bash -c \"ifconfig uesimtun0\"",
+                "test": "/bin/bash -c \"pgrep nr-softmodem\"",
+                "interval": 10000000000,
+                "timeout": 5000000000,
+                "retries": 10,
+            },
+        },
+    )
+
+    info("*** Adding UE\n")
+    ue_srv = mgr.addContainer(
+        name = "ue_srv", 
+        dimage="oaisoftwarealliance/oai-nr-ue:develop",
+        dhost = "ue",
+        dcmd="",
+        docker_args={
+            "privileged": True,
+            "environment": {
+                "USE_ADDITIONAL_OPTIONS": "USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001101 -C 3619200000 --rfsimulator.serveraddr 192.168.70.152 --log_config.global_log_options level,nocolor,time",
+            },
+            "volumes": {
+                prj_folder + "/ran/nrue.uicc.conf": {
+                    "bind": "/opt/oai-nr-ue/etc/nr-ue.conf",
+                    "mode": "rw",
+                },
+            },
+            "healthcheck": {
+                "test": "/bin/bash -c \"pgrep nr-uesoftmodem\"",
                 "interval": 10000000000,
                 "timeout": 5000000000,
                 "retries": 10,
